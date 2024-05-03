@@ -35,13 +35,13 @@ data class Request(
   val utf8ContentTypes: List<String>,
 ) {
   val httpUrl: HttpUrl
-    get() {
+    by lazy {
       val urlBuilder = (baseURL + path).toHttpUrl().newBuilder()
       queryParameters.forEach { (key, value) ->
         urlBuilder.addQueryParameter(key, value)
       }
 
-      return urlBuilder.build()
+      urlBuilder.build()
     }
 
   val okHttpRequest: okhttp3.Request
