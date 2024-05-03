@@ -140,7 +140,7 @@ class SendModule(reactContext: ReactApplicationContext) : ReactContextBaseJavaMo
       try {
         okHttpResponse = client.newCall(request.okHttpRequest).execute()
       } catch (ioException: IOException) {
-        // FIXME: wtf
+        // FIXME: switch on error and reject promise 
         return
       }
       val response = Response(request, okHttpResponse)
