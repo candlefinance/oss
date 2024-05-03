@@ -53,7 +53,8 @@ data class Request(
 
       requestBuilder.method(
         method,
-        if (body == null) if (HttpMethod.requiresRequestBody(method)) "".toRequestBody() else null
+        if (body == null)
+          if (HttpMethod.requiresRequestBody(method)) "".toRequestBody() else null
         else {
           val contentTypeHeader = headerParameters.entries.find {
             it.key.equals(
@@ -79,8 +80,9 @@ data class Response(
   val body: String?,
 ) {
 
-  constructor(request: Request, okHttpResponse: okhttp3.Response) : this(
-    statusCode = okHttpResponse.code,
+  constructor(
+    request: Request, okHttpResponse: okhttp3.Response
+  ) : this(statusCode = okHttpResponse.code,
     headerParameters = okHttpResponse.headers.names()
       .associateWith { okHttpResponse.headers(it).last() },
 
@@ -101,13 +103,12 @@ data class Response(
       } else {
         if (bodyIsUTF8) responseBody.string() else responseBody.byteString().base64()
       }
-    }
-  )
+    })
 }
 
 class SendModule(reactContext: ReactApplicationContext) : ReactContextBaseJavaModule(reactContext) {
 
-  private val client =
+  private val client by lazy {
     OkHttpClient.Builder()
       .callTimeout(60, TimeUnit.SECONDS)
       .connectTimeout(0, TimeUnit.SECONDS)
@@ -115,6 +116,7 @@ class SendModule(reactContext: ReactApplicationContext) : ReactContextBaseJavaMo
       .writeTimeout(0, TimeUnit.SECONDS)
       .followRedirects(false) // NOTE: This implicitly sets followSslRedirects(false) as well
       .build()
+  }
 
   override fun getName(): String {
     return NAME
@@ -140,7 +142,7 @@ class SendModule(reactContext: ReactApplicationContext) : ReactContextBaseJavaMo
       try {
         okHttpResponse = client.newCall(request.okHttpRequest).execute()
       } catch (ioException: IOException) {
-        // FIXME: switch on error and reject promise 
+        // FIXME: switch on error and reject promise
         return
       }
       val response = Response(request, okHttpResponse)
@@ -149,9 +151,7 @@ class SendModule(reactContext: ReactApplicationContext) : ReactContextBaseJavaMo
         promise.resolve(Json.encodeToString(response))
       } catch (serializationException: SerializationException) {
         promise.reject(
-          "@candlefinance.send.response_invalid",
-          RESPONSE_ERROR,
-          serializationException
+          "@candlefinance.send.response_invalid", RESPONSE_ERROR, serializationException
         )
       }
     } catch (exception: Exception) {
