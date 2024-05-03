@@ -1,8 +1,32 @@
+private let requestError = "Your request was invalid. Please make sure it conforms to the Request type and try again."
+private let serverError = "Your request did not receive a response. Please make sure you are connected to the Internet and try again."
+private let responseError = "Your request received a response, but it couldn't be processed. Please file an issue on GitHub or try again."
+private let unknownError = "Something went wrong. Please file an issue on GitHub or try again."
+
 private func bodyIsUTF8(contentTypeHeader: String?, utf8ContentTypes: [String]) -> Bool {
-    guard let contentType = contentTypeHeader?.split(separator: ";").first else {
+    guard let contentType = contentTypeHeader?.split(separator: ";")[0] else {
         return false
     }
     return utf8ContentTypes.contains(String(contentType))
+}
+
+@propertyWrapper
+struct MustBePresent<Value> {
+    var wrappedValue: Value?
+}
+
+extension MustBePresent: Decodable where Value: Decodable {
+    init(from decoder: Decoder) throws {
+        let container = try decoder.singleValueContainer()
+        wrappedValue = container.decodeNil() ? nil : try container.decode(Value.self)
+    }
+}
+
+extension MustBePresent: Encodable where Value: Encodable {
+    func encode(to encoder: Encoder) throws {
+        var container = encoder.singleValueContainer()
+        try container.encode(wrappedValue)
+    }
 }
 
 struct Request: Decodable {
@@ -11,7 +35,7 @@ struct Request: Decodable {
     let queryParameters: [String: String]
     let headerParameters: [String: String]
     let method: String
-    let body: String?
+    @MustBePresent var body: String?
     let utf8ContentTypes: [String]
     
     var url: URL {
@@ -35,8 +59,8 @@ struct Request: Decodable {
             request.setValue(value, forHTTPHeaderField: key)
         }
         
-        let contentTypeHeader = headerParameters.first(where: { $0.key.caseInsensitiveCompare("Content-Type") == .orderedSame })?.value
         if let body {
+            let contentTypeHeader = headerParameters.first(where: { $0.key.caseInsensitiveCompare("Content-Type") == .orderedSame })?.value
             if bodyIsUTF8(contentTypeHeader: contentTypeHeader, utf8ContentTypes: utf8ContentTypes) {
                 request.httpBody = body.data(using: .utf8)!
             } else {
@@ -50,7 +74,7 @@ struct Request: Decodable {
 struct Response: Encodable {
     let statusCode: Int
     let headerParameters: [String: String]
-    let body: String?
+    @MustBePresent var body: String?
     
     init(request: Request, data: Data, httpURLResponse: HTTPURLResponse) {
         statusCode = httpURLResponse.statusCode
@@ -72,11 +96,6 @@ class IgnoreRedirectsDelegate: NSObject, URLSessionTaskDelegate {
     }
 }
 
-private let requestError = "Your request was invalid. Please make sure it conforms to the Request type and try again."
-private let serverError = "Your request did not receive a response. Please make sure you are connected to the Internet and try again."
-private let responseError = "Your request received a response, but it couldn't be processed. Please file an issue on GitHub or try again."
-private let unknownError = "Something went wrong. Please file an issue on GitHub or try again."
-
 @objc(Send)
 class Send: NSObject {
     let session = URLSession(configuration: .default, delegate: IgnoreRedirectsDelegate(), delegateQueue: nil)
@@ -97,7 +116,7 @@ class Send: NSObject {
                 
                 let (data, urlResponse) = try await session.data(for: request.urlRequest)
                 guard let httpURLResponse = urlResponse as? HTTPURLResponse else {
-                    reject("error", "Response is not a HTTPURLResponse", nil)
+                    reject("@candlefinance.send.response_not_http_url_response", responseError, nil)
                     return
                 }
                 let response = Response(

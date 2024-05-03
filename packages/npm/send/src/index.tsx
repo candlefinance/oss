@@ -32,7 +32,7 @@ export type Request = {
     | 'OPTIONS'
     | 'CONNECT'
     | 'TRACE';
-  body?: string;
+  body: string | null;
   utf8ContentTypes: string[];
 };
 
