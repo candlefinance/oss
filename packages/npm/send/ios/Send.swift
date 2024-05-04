@@ -178,10 +178,10 @@ class Send: NSObject {
                         data: data,
                         httpURLResponse: httpURLResponse
                     ) {
-                    case .failure(let responseConstructionError): 
+                    case .failure(let responseConstructionError):
                         return reject("@candlefinance.send.\(responseConstructionError)", requestError, nil)
                     case .success(let response):
-                        let responseData = try JSONEncoder().encode(Result<Response, Error>.success(response))
+                        let responseData = try JSONEncoder().encode(response)
                         guard let stringifiedResponse = String(data: responseData, encoding: .utf8) else {
                             return reject("@candlefinance.send.response_data_not_utf8", responseError, nil)
                         }
