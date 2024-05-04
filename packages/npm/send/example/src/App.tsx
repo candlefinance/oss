@@ -1,7 +1,7 @@
 import * as React from 'react';
 
-import { StyleSheet, View, Text } from 'react-native';
 import { send } from '@candlefinance/send';
+import { StyleSheet, Text, View } from 'react-native';
 
 export const serializeError = (error: unknown) => {
   if (error instanceof Error) {
@@ -17,7 +17,7 @@ export const serializeError = (error: unknown) => {
 };
 
 export default function App() {
-  const [result, setResult] = React.useState<string | undefined>();
+  const [result, setResult] = React.useState<string>('waiting...');
 
   React.useEffect(() => {
     send({
@@ -29,7 +29,7 @@ export default function App() {
         country: 'US',
       },
       body: null,
-      utf8ContentTypes: ['text/javascript'],
+      utf8ContentTypes: ['application/json', 'text/html', 'text/javascript'],
       headerParameters: {
         'Cache-Control': 'no-cache',
         'Content-Type': 'application/json',
@@ -38,7 +38,7 @@ export default function App() {
     })
       .then((response) => {
         console.log('SUCCESS', response);
-        setResult(response.body ?? undefined);
+        setResult(response.body ?? 'none');
       })
       .catch((error) => {
         console.log('FAILURE', serializeError(error));
