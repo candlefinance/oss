@@ -13,7 +13,7 @@ runs:
     - name: Set up Git
       shell: bash
       run: |
-        git config --global user.email "contacet@trycandle.com"
+        git config --global user.email "contact@trycandle.com"
         git config --global user.name "Candle Admin"
 
     - name: Cache dependencies
