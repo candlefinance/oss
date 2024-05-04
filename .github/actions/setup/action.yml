@@ -7,15 +7,15 @@ runs:
     - name: Setup Node.js
       uses: actions/setup-node@v3
       with:
-        node-version-file: .nvmrc
+        node-version-file: packages/npm/send/.nvmrc
 
     - name: Cache dependencies
       id: yarn-cache
       uses: actions/cache@v3
       with:
         path: |
-          **/node_modules
-          .yarn/install-state.gz
+          packages/npm/send/**/node_modules
+          packages/npm/send/.yarn/install-state.gz
         key: ${{ runner.os }}-yarn-${{ hashFiles('yarn.lock') }}-${{ hashFiles('**/package.json', '!node_modules/**') }}
         restore-keys: |
           ${{ runner.os }}-yarn-${{ hashFiles('yarn.lock') }}
@@ -24,4 +24,5 @@ runs:
     - name: Install dependencies
       if: steps.yarn-cache.outputs.cache-hit != 'true'
       run: yarn install --immutable
+      working-directory: packages/npm/send
       shell: bash
