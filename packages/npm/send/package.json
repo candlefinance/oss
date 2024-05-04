@@ -102,6 +102,12 @@
       "tagName": "v${version}",
       "push": true
     },
+    "npm": {
+      "publish": false,
+      "publishConfig": {
+        "registry": "https://registry.npmjs.org"
+      }
+    },
     "github": {
       "release": true,
       "publishConfig": {
