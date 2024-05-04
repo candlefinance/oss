@@ -23,6 +23,8 @@ jobs:
 
       - name: Publish package
         run: yarn release
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
   release-public:
     needs: release-internal
