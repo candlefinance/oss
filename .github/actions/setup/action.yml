@@ -4,6 +4,10 @@ description: Setup Node.js and install dependencies
 runs:
   using: composite
   steps:
+    - name: Check Working Directory (inside of action)
+      shell: bash
+      run: pwd
+
     - name: Setup Node.js
       uses: actions/setup-node@v3
       with:

@@ -30,6 +30,9 @@ jobs:
   test:
     runs-on: ubuntu-latest
     steps:
+      - name: Check Working Directory (outside of action)
+        run: pwd
+
       - name: Checkout
         uses: actions/checkout@v3
 
