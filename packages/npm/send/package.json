@@ -50,7 +50,7 @@
   },
   "homepage": "https://github.com/candlefinance/oss#readme",
   "publishConfig": {
-    "registry": "https://npm.pkg.github.com"
+    "registry": "https://registry.npmjs.org/"
   },
   "devDependencies": {
     "@commitlint/config-conventional": "^17.0.2",
@@ -102,17 +102,11 @@
       "tagName": "v${version}",
       "push": true
     },
-    "github": {
-      "release": true,
-      "publishConfig": {
-        "registry": "https://npm.pkg.github.com"
-      }
-    },
     "npm": {
-      "release": true,
-      "publishConfig": {
-        "registry": "https://registry.npmjs.org"
-      }
+      "publish": true
+    },
+    "github": {
+      "release": true
     },
     "plugins": {
       "@release-it/conventional-changelog": {
