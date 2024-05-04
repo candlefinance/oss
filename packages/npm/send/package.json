@@ -108,6 +108,12 @@
         "registry": "https://npm.pkg.github.com"
       }
     },
+    "npm": {
+      "release": true,
+      "publishConfig": {
+        "registry": "https://registry.npmjs.org"
+      }
+    },
     "plugins": {
       "@release-it/conventional-changelog": {
         "preset": "angular",

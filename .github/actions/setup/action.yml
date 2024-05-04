@@ -10,6 +10,12 @@ runs:
         node-version-file: packages/npm/send/.nvmrc
         registry-url: "https://npm.pkg.github.com"
 
+    - name: Set up Git
+      shell: bash
+      run: |
+        git config --global user.email "contacet@trycandle.com"
+        git config --global user.name "Candle Admin"
+
     - name: Cache dependencies
       id: yarn-cache
       uses: actions/cache@v3
