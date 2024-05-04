@@ -49,6 +49,9 @@
     "url": "https://github.com/candlefinance/oss/issues"
   },
   "homepage": "https://github.com/candlefinance/oss#readme",
+  "publishConfig": {
+    "registry": "https://npm.pkg.github.com"
+  },
   "devDependencies": {
     "@commitlint/config-conventional": "^17.0.2",
     "@evilmartians/lefthook": "^1.5.0",
@@ -98,6 +101,12 @@
       "commitMessage": "chore: release ${version}",
       "tagName": "v${version}",
       "push": true
+    },
+    "npm": {
+      "publish": false,
+      "publishConfig": {
+        "registry": "https://registry.npmjs.org"
+      }
     },
     "github": {
       "release": true,
