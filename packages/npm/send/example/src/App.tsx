@@ -38,11 +38,11 @@ export default function App() {
     })
       .then((response) => {
         console.log('SUCCESS', response);
-        setResult(response.body ?? 'none');
+        setResult(response.body ?? 'no body');
       })
       .catch((error) => {
         console.log('FAILURE', serializeError(error));
-        setResult(serializeError(error));
+        setResult(`[${error.code}] ${error.message}`);
       });
   }, []);
 
