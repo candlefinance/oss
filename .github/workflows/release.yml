@@ -9,7 +9,7 @@ defaults:
     working-directory: "packages/npm/send"
 
 jobs:
-  release:
+  release-internal:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
@@ -23,3 +23,6 @@ jobs:
 
       - name: Publish package
         run: yarn release
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
