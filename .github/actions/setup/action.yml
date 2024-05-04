@@ -14,7 +14,7 @@ runs:
       shell: bash
       run: |
         git config --global user.email "contact@trycandle.com"
-        git config --global user.name "Candle Admin"
+        git config --global user.name "Candle Finance CI"
 
     - name: Cache dependencies
       id: yarn-cache
