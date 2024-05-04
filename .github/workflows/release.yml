@@ -9,7 +9,7 @@ defaults:
     working-directory: "packages/npm/send"
 
 jobs:
-  release-internal:
+  release:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout

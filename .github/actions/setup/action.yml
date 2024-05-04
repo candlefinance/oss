@@ -8,7 +8,6 @@ runs:
       uses: actions/setup-node@v3
       with:
         node-version-file: packages/npm/send/.nvmrc
-        registry-url: "https://npm.pkg.github.com"
 
     - name: Set up Git
       shell: bash

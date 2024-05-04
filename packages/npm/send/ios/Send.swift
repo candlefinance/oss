@@ -1,7 +1,15 @@
-private let requestError = "Your request was invalid. Please make sure it conforms to the Request type and try again."
-private let serverError = "Your request did not receive a response. Please make sure you are connected to the Internet and try again."
-private let responseError = "Your request received a response, but it couldn't be processed. Please file an issue on GitHub or try again."
-private let unknownError = "Something went wrong. Please file an issue on GitHub or try again."
+private let CODE_REQUEST_INVALID = "@candlefinance.send.request_invalid"
+private let CODE_NO_RESPONSE = "@candlefinance.send.no_response"
+private let CODE_RESPONSE_INVALID = "@candlefinance.send.response_invalid"
+private let CODE_UNKNOWN = "@candlefinance.send.unknown"
+
+private let MESSAGE_REQUEST_INVALID =
+"Your request is invalid. Please verify the format of your base URL and any other fields specified."
+private let MESSAGE_NO_RESPONSE =
+"Your request did not receive a response. Please verify your Internet connection."
+private let MESSAGE_RESPONSE_INVALID =
+"Your request received a response, but it couldn't be processed. Please verify the configuration of your server."
+private let MESSAGE_UNKNOWN = "Something went wrong. Please file an issue on GitHub or try again."
 
 private func bodyIsUTF8(contentTypeHeader: String?, utf8ContentTypes: [String]) -> Bool {
     guard let contentType = contentTypeHeader?.split(separator: ";").first else {
@@ -10,16 +18,34 @@ private func bodyIsUTF8(contentTypeHeader: String?, utf8ContentTypes: [String]) 
     return utf8ContentTypes.contains(String(contentType))
 }
 
-enum URLConstructionError: Error {
-    case invalidBaseURL
-    case invalidPathOrQueryParameters
-}
-
-enum URLRequestConstructionError: Error {
-    case invalidBaseURL
-    case invalidPathOrQueryParameters
-    case invalidUTF8Body
-    case invalidBase64Body
+enum SendError: Error {
+    case nonBase64RequestBody
+    
+    case nonUTF8RequestBody
+    case nonUTF8ResponseBody
+    
+    case invalidRequestBaseURL
+    case invalidRequestPathOrQueryParameters
+    case invalidResponseHeaderParameters
+    
+    var message: String {
+        switch self {
+        case .nonBase64RequestBody:
+            return "Your request headers specify a Content-Type NOT included in `utf8ContentTypes`, but your request body is not a base64-encoded string."
+        case .nonUTF8RequestBody:
+            return "Your request headers specify a Content-Type included in `utf8ContentTypes`, but your request body is not a UTF8-encoded string."
+        case .nonUTF8ResponseBody:
+            return "The response headers specify a Content-Type included in `utf8ContentTypes`, but the response body was not UTF8-encoded."
+            
+        case .invalidRequestBaseURL:
+            return "Your base URL is not valid."
+        case .invalidRequestPathOrQueryParameters:
+            return "Your path or query parameters is not valid."
+        case .invalidResponseHeaderParameters:
+            return "The response headers were not valid."
+            
+        }
+    }
 }
 
 @propertyWrapper
@@ -50,9 +76,9 @@ struct Request: Decodable {
     @RequiredKey var body: String?
     let utf8ContentTypes: [String]
     
-    var url: Result<URL, URLRequestConstructionError> {
+    var url: Result<URL, SendError> {
         guard var urlComponents = URLComponents(string: baseURL) else {
-            return .failure(.invalidBaseURL)
+            return .failure(.invalidRequestBaseURL)
         }
         urlComponents.path = path
         
@@ -63,12 +89,12 @@ struct Request: Decodable {
         }
         
         guard let url = urlComponents.url else {
-            return .failure(.invalidPathOrQueryParameters)
+            return .failure(.invalidRequestPathOrQueryParameters)
         }
         return .success(url)
     }
     
-    var urlRequest: Result<URLRequest, URLRequestConstructionError> {
+    var urlRequest: Result<URLRequest, SendError> {
         return url.flatMap { url in
             var urlRequest = URLRequest(url: url)
             urlRequest.httpMethod = method
@@ -81,12 +107,12 @@ struct Request: Decodable {
                 let contentTypeHeader = headerParameters.first(where: { $0.key.caseInsensitiveCompare("Content-Type") == .orderedSame })?.value
                 if bodyIsUTF8(contentTypeHeader: contentTypeHeader, utf8ContentTypes: utf8ContentTypes) {
                     guard let utf8Body = body.data(using: .utf8) else {
-                        return .failure(.invalidUTF8Body)
+                        return .failure(.nonUTF8RequestBody)
                     }
                     urlRequest.httpBody = utf8Body
                 } else {
                     guard let base64Body = Data(base64Encoded: body) else {
-                        return .failure(.invalidBase64Body)
+                        return .failure(.nonBase64RequestBody)
                     }
                     urlRequest.httpBody = base64Body
                 }
@@ -96,46 +122,35 @@ struct Request: Decodable {
     }
 }
 
-enum ResponseConstructionError: Error {
-    case invalidHeaderParameters
-    case invalidUTF8Body
-}
-
 struct Response: Encodable {
     let statusCode: Int
     let headerParameters: [String: String]
     @RequiredKey var body: String?
     
-    init(statusCode: Int, headerParameters: [String: String], body: String?) {
-        self.statusCode = statusCode
-        self.headerParameters = headerParameters
-        self.body = body
-    }
-    
-    static func make(request: Request, data: Data, httpURLResponse: HTTPURLResponse) -> Result<Response, ResponseConstructionError> {
+    init(request: Request, data: Data, httpURLResponse: HTTPURLResponse) throws {
+        self.statusCode = httpURLResponse.statusCode
+        
         guard let headerParameters = httpURLResponse.allHeaderFields as? [String: String] else {
-            return .failure(.invalidHeaderParameters)
+            throw SendError.invalidResponseHeaderParameters
         }
+        self.headerParameters = headerParameters
         
-        let bodyIsUTF8 = bodyIsUTF8(
-            contentTypeHeader: httpURLResponse.value(forHTTPHeaderField: "Content-Type"),
-            utf8ContentTypes: request.utf8ContentTypes
-        )
-        let body: String?
-        if (bodyIsUTF8) {
-            guard let utf8Body = String(data: data, encoding: .utf8) else {
-                return .failure(.invalidUTF8Body)
-            }
-            body = utf8Body
+        if (data.isEmpty) {
+            self.body = nil
         } else {
-            body = data.base64EncodedString()
+            let bodyIsUTF8 = bodyIsUTF8(
+                contentTypeHeader: httpURLResponse.value(forHTTPHeaderField: "Content-Type"),
+                utf8ContentTypes: request.utf8ContentTypes
+            )
+            if (bodyIsUTF8) {
+                guard let utf8Body = String(data: data, encoding: .utf8) else {
+                    throw SendError.nonUTF8ResponseBody
+                }
+                self.body = utf8Body
+            } else {
+                self.body = data.base64EncodedString()
+            }
         }
-        
-        return .success(Response(
-            statusCode: httpURLResponse.statusCode,
-            headerParameters: headerParameters,
-            body: body
-        ))
     }
 }
 
@@ -159,41 +174,46 @@ class Send: NSObject {
         Task {
             do {
                 guard let requestData = stringifiedRequest.data(using: .utf8) else {
-                    return reject("@candlefinance.send.stringified_request_not_utf8", requestError, nil)
+                    return reject(CODE_REQUEST_INVALID, requestError, nil)
                 }
                 let request = try JSONDecoder().decode(Request.self, from: requestData)
+                let urlRequest = try request.urlRequest.get()
                 
-                switch request.urlRequest {
-                case .failure(let urlRequestConstructionError):
-                    return reject("@candlefinance.send.request.\(urlRequestConstructionError)", requestError, nil)
+                let (data, urlResponse) = try await session.data(for: urlRequest)
+                guard let httpURLResponse = urlResponse as? HTTPURLResponse else {
+                    reject(CODE_RESPONSE_INVALID, responseError, nil)
+                    return
+                }
+                let response = try Response(
+                    request: request,
+                    data: data,
+                    httpURLResponse: httpURLResponse
+                )
+                
+                let responseData = try JSONEncoder().encode(response)
+                guard let stringifiedResponse = String(data: responseData, encoding: .utf8) else {
+                    return reject(CODE_RESPONSE_INVALID, responseError, nil)
+                }
+                resolve(stringifiedResponse)
+                
+            } catch let sendError as SendError {
+                switch (sendError) {
+                case .nonBase64RequestBody,
+                        .invalidRequestBaseURL,
+                        .nonUTF8RequestBody,
+                        .invalidRequestPathOrQueryParameters:
+                    reject(CODE_REQUEST_INVALID, sendError.message, sendError)
                     
-                case .success(let urlRequest):
-                    let (data, urlResponse) = try await session.data(for: urlRequest)
-                    guard let httpURLResponse = urlResponse as? HTTPURLResponse else {
-                        reject("@candlefinance.send.response.not_http_url_response", responseError, nil)
-                        return
-                    }
-                    switch Response.make(
-                        request: request,
-                        data: data,
-                        httpURLResponse: httpURLResponse
-                    ) {
-                    case .failure(let responseConstructionError):
-                        return reject("@candlefinance.send.\(responseConstructionError)", requestError, nil)
-                    case .success(let response):
-                        let responseData = try JSONEncoder().encode(response)
-                        guard let stringifiedResponse = String(data: responseData, encoding: .utf8) else {
-                            return reject("@candlefinance.send.response_data_not_utf8", responseError, nil)
-                        }
-                        resolve(stringifiedResponse)
-                    }
+                case .nonUTF8ResponseBody,
+                        .invalidResponseHeaderParameters:
+                    reject(CODE_RESPONSE_INVALID, sendError.message, sendError)
                 }
                 
             } catch let decodingError as DecodingError {
-                reject("@candlefinance.send.stringified_request_invalid", requestError, decodingError)
+                reject(CODE_REQUEST_INVALID, decodingError.failureReason, decodingError)
                 
             } catch let encodingError as EncodingError {
-                reject("@candlefinance.send.response_invalid", responseError, encodingError)
+                reject(CODE_RESPONSE_INVALID, encodingError.failureReason, encodingError)
                 
             } catch let urlError as URLError {
                 switch (urlError.code) {
@@ -214,7 +234,7 @@ class Send: NSObject {
                         .unsupportedURL,
                         .userAuthenticationRequired,
                         .userCancelledAuthentication:
-                    reject("@candlefinance.send.request_invalid", requestError, urlError)
+                    reject(CODE_REQUEST_INVALID, MESSAGE_REQUEST_INVALID, urlError)
                     
                 case  .callIsActive,
                         .internationalRoamingOff,
@@ -228,7 +248,7 @@ class Send: NSObject {
                         .secureConnectionFailed,
                         .timedOut,
                         .appTransportSecurityRequiresSecureConnection:
-                    reject("@candlefinance.send.no_response", serverError, urlError)
+                    reject(CODE_NO_RESPONSE, MESSAGE_NO_RESPONSE, urlError)
                     
                 case .backgroundSessionInUseByAnotherProcess,
                         .backgroundSessionRequiresSharedContainer,
@@ -248,14 +268,14 @@ class Send: NSObject {
                         .httpTooManyRedirects,
                         .redirectToNonExistentLocation,
                         .zeroByteResource:
-                    reject("@candlefinance.send.response_data_invalid", responseError, urlError)
+                    reject(CODE_RESPONSE_INVALID, MESSAGE_RESPONSE_INVALID, urlError)
                     
                 default:
                     // NOTE: The only other documented case is `unknown`, but code is not an enum so a default case is required regardless
-                    reject("@candlefinance.send.unknown", unknownError, urlError)
+                    reject(CODE_UNKNOWN, MESSAGE_UNKNOWN, urlError)
                 }
             } catch let error {
-                reject("@candlefinance.send.unknown", unknownError, error)
+                reject(CODE_UNKNOWN, MESSAGE_UNKNOWN, error)
             }
         }
     }

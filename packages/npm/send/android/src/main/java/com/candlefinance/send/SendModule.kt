@@ -4,10 +4,16 @@ import com.facebook.react.bridge.Promise
 import com.facebook.react.bridge.ReactApplicationContext
 import com.facebook.react.bridge.ReactContextBaseJavaModule
 import com.facebook.react.bridge.ReactMethod
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.suspendCancellableCoroutine
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.SerializationException
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
+import okhttp3.Call
+import okhttp3.Callback
 import okhttp3.HttpUrl
 import okhttp3.HttpUrl.Companion.toHttpUrl
 import okhttp3.OkHttpClient
@@ -17,11 +23,40 @@ import okio.Buffer
 import okio.ByteString.Companion.decodeBase64
 import okio.GzipSource
 import okio.IOException
+import java.net.ConnectException
+import java.net.ProtocolException
+import java.net.SocketTimeoutException
+import java.net.UnknownHostException
 import java.util.concurrent.TimeUnit
+import javax.net.ssl.SSLException
+import kotlin.coroutines.resume
+import kotlin.coroutines.resumeWithException
+
+// FIXME: Move to another file or a utilities package
+suspend fun Call.await(): okhttp3.Response = suspendCancellableCoroutine { continuation ->
+  enqueue(object : Callback {
+    override fun onFailure(call: Call, e: IOException) {
+      if (continuation.isActive) continuation.resumeWithException(e)
+    }
+
+    override fun onResponse(call: Call, response: okhttp3.Response) {
+      if (continuation.isActive) continuation.resume(response)
+    }
+  })
+
+  continuation.invokeOnCancellation {
+    cancel()
+  }
+}
 
 // FIXME: Actually check charset parameter first if set, then fall back to MIME type
 private fun bodyIsUTF8(contentTypeHeader: String?, utf8ContentTypes: List<String>): Boolean {
-  return contentTypeHeader != null && utf8ContentTypes.contains(contentTypeHeader.split(';')[0])
+  return utf8ContentTypes.contains(contentTypeHeader?.split(';')?.firstOrNull())
+}
+
+sealed class SendException(override val message: String) : Exception() {
+  object RequestBodyNotBase64 :
+    SendException(message = "Your request headers specify a Content-Type NOT included in `utf8ContentTypes`, but your request body is not a base64-encoded string.")
 }
 
 @Serializable
@@ -34,43 +69,40 @@ data class Request(
   val body: String?,
   val utf8ContentTypes: List<String>,
 ) {
-  val httpUrl: HttpUrl
-    by lazy {
-      val urlBuilder = (baseURL + path).toHttpUrl().newBuilder()
-      queryParameters.forEach { (key, value) ->
-        urlBuilder.addQueryParameter(key, value)
-      }
-
-      urlBuilder.build()
+  val httpUrl: HttpUrl by lazy {
+    val urlBuilder = (baseURL + path).toHttpUrl().newBuilder()
+    queryParameters.forEach { (key, value) ->
+      urlBuilder.addQueryParameter(key, value)
     }
 
-  val okHttpRequest: okhttp3.Request
-    get() {
-      val requestBuilder = okhttp3.Request.Builder().url(httpUrl)
-      headerParameters.forEach { (key, value) ->
-        requestBuilder.addHeader(key, value)
-      }
+    urlBuilder.build()
+  }
 
-      requestBuilder.method(
-        method,
-        if (body == null)
-          if (HttpMethod.requiresRequestBody(method)) "".toRequestBody() else null
-        else {
-          val contentTypeHeader = headerParameters.entries.find {
-            it.key.equals(
-              "content-type", ignoreCase = true
-            )
-          }?.value
-          if (bodyIsUTF8(
-              contentTypeHeader, utf8ContentTypes
-            )
-          ) body.toRequestBody()
-          else body.decodeBase64()!!.toRequestBody()
-        }
-      )
-
-      return requestBuilder.build()
+  val okHttpRequest: okhttp3.Request by lazy {
+    val requestBuilder = okhttp3.Request.Builder().url(httpUrl)
+    headerParameters.forEach { (key, value) ->
+      requestBuilder.addHeader(key, value)
     }
+
+    requestBuilder.method(
+      method,
+      if (body == null) if (HttpMethod.requiresRequestBody(method)) "".toRequestBody() else null
+      else {
+        val contentTypeHeader = headerParameters.entries.find {
+          it.key.equals(
+            "content-type", ignoreCase = true
+          )
+        }?.value
+        if (bodyIsUTF8(
+            contentTypeHeader, utf8ContentTypes
+          )
+        ) body.toRequestBody()
+        else body.decodeBase64()?.toRequestBody() ?: throw SendException.RequestBodyNotBase64
+      }
+    )
+
+    requestBuilder.build()
+  }
 }
 
 @Serializable
@@ -109,11 +141,8 @@ data class Response(
 class SendModule(reactContext: ReactApplicationContext) : ReactContextBaseJavaModule(reactContext) {
 
   private val client by lazy {
-    OkHttpClient.Builder()
-      .callTimeout(60, TimeUnit.SECONDS)
-      .connectTimeout(0, TimeUnit.SECONDS)
-      .readTimeout(0, TimeUnit.SECONDS)
-      .writeTimeout(0, TimeUnit.SECONDS)
+    OkHttpClient.Builder().callTimeout(60, TimeUnit.SECONDS).connectTimeout(0, TimeUnit.SECONDS)
+      .readTimeout(0, TimeUnit.SECONDS).writeTimeout(0, TimeUnit.SECONDS)
       .followRedirects(false) // NOTE: This implicitly sets followSslRedirects(false) as well
       .build()
   }
@@ -124,50 +153,76 @@ class SendModule(reactContext: ReactApplicationContext) : ReactContextBaseJavaMo
 
   @ReactMethod
   fun send(stringifiedRequest: String, promise: Promise) {
-//    CoroutineScope(Dispatchers.IO).launch {
-    try {
-      val request: Request
+    CoroutineScope(Dispatchers.Unconfined).launch {
       try {
-        request = Json.decodeFromString<Request>(stringifiedRequest)
-      } catch (serializationException: SerializationException) {
-        promise.reject(
-          "@candlefinance.send.stringified_request_invalid",
-          serializationException.message,
-          serializationException
-        )
-        return
-      }
+        val request = try {
+          Json.decodeFromString<Request>(stringifiedRequest)
+        } catch (e: SerializationException) {
+          return@launch promise.reject(CODE_REQUEST_INVALID, e.message, e)
+        }
 
-      val okHttpResponse: okhttp3.Response
-      try {
-        okHttpResponse = client.newCall(request.okHttpRequest).execute()
-      } catch (ioException: IOException) {
-        // FIXME: switch on error and reject promise
-        return
-      }
-      val response = Response(request, okHttpResponse)
+        val okHttpRequest = try {
+          request.okHttpRequest
+        } catch (e: SendException) {
+          return@launch when (e) {
+            is SendException.RequestBodyNotBase64 -> promise.reject(
+              CODE_REQUEST_INVALID, e.message, e
+            )
+          }
+        } catch (e: Exception) {
+          return@launch promise.reject(CODE_REQUEST_INVALID, MESSAGE_REQUEST_INVALID, e)
+        }
 
-      try {
-        promise.resolve(Json.encodeToString(response))
-      } catch (serializationException: SerializationException) {
-        promise.reject(
-          "@candlefinance.send.response_invalid", RESPONSE_ERROR, serializationException
-        )
+        val okHttpResponse = try {
+          client.newCall(okHttpRequest).await()
+        } catch (e: IOException) {
+          return@launch when (e) {
+            is UnknownHostException -> promise.reject(
+              CODE_REQUEST_INVALID, MESSAGE_REQUEST_INVALID, e
+            )
+
+            is SocketTimeoutException, is SSLException, is ConnectException, is ProtocolException -> promise.reject(
+              CODE_NO_RESPONSE, MESSAGE_NO_RESPONSE, e
+            )
+
+            else -> promise.reject(
+              CODE_RESPONSE_INVALID, MESSAGE_RESPONSE_INVALID, e
+            )
+          }
+        }
+
+        val response = try {
+          Response(request, okHttpResponse)
+        } catch (e: Exception) {
+          return@launch promise.reject(CODE_RESPONSE_INVALID, MESSAGE_RESPONSE_INVALID, e)
+        }
+
+        val stringifiedResponse = try {
+          Json.encodeToString(response)
+        } catch (e: SerializationException) {
+          return@launch promise.reject(CODE_RESPONSE_INVALID, e.message, e)
+        }
+
+        promise.resolve(stringifiedResponse)
+      } catch (e: Exception) {
+        promise.reject(CODE_UNKNOWN, MESSAGE_UNKNOWN, e)
       }
-    } catch (exception: Exception) {
-      promise.reject("@candlefinance.send.unknown", UNKNOWN_ERROR, exception)
     }
-//    }
   }
 
   companion object {
     const val NAME = "Send"
-    const val REQUEST_ERROR =
-      "Your request was invalid. Please make sure it conforms to the Request type and try again."
-    const val SERVER_ERROR =
-      "Your request did not receive a response. Please make sure you are connected to the Internet and try again."
-    const val RESPONSE_ERROR =
-      "Your request received a response, but it couldn't be processed. Please file an issue on GitHub or try again."
-    const val UNKNOWN_ERROR = "Something went wrong. Please file an issue on GitHub or try again."
+    const val CODE_REQUEST_INVALID = "@candlefinance.send.request_invalid"
+    const val CODE_NO_RESPONSE = "@candlefinance.send.no_response"
+    const val CODE_RESPONSE_INVALID = "@candlefinance.send.response_invalid"
+    const val CODE_UNKNOWN = "@candlefinance.send.unknown"
+
+    const val MESSAGE_REQUEST_INVALID =
+      "Your request is invalid. Please verify the format of your base URL and any other fields specified."
+    const val MESSAGE_NO_RESPONSE =
+      "Your request did not receive a response. Please verify your Internet connection."
+    const val MESSAGE_RESPONSE_INVALID =
+      "Your request received a response, but it couldn't be processed. Please verify the configuration of your server."
+    const val MESSAGE_UNKNOWN = "Something went wrong. Please file an issue on GitHub or try again."
   }
 }
