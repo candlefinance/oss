@@ -1,6 +1,6 @@
 {
   "name": "@candlefinance/send",
-  "version": "0.3.2",
+  "version": "0.3.3",
   "description": "A fast, low-level networking library",
   "main": "lib/commonjs/index",
   "module": "lib/module/index",
