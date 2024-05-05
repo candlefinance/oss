@@ -174,14 +174,14 @@ class Send: NSObject {
         Task {
             do {
                 guard let requestData = stringifiedRequest.data(using: .utf8) else {
-                    return reject(CODE_REQUEST_INVALID, requestError, nil)
+                    return reject(CODE_REQUEST_INVALID, MESSAGE_REQUEST_INVALID, nil)
                 }
                 let request = try JSONDecoder().decode(Request.self, from: requestData)
                 let urlRequest = try request.urlRequest.get()
                 
                 let (data, urlResponse) = try await session.data(for: urlRequest)
                 guard let httpURLResponse = urlResponse as? HTTPURLResponse else {
-                    reject(CODE_RESPONSE_INVALID, responseError, nil)
+                    reject(CODE_RESPONSE_INVALID, MESSAGE_RESPONSE_INVALID, nil)
                     return
                 }
                 let response = try Response(
@@ -192,7 +192,7 @@ class Send: NSObject {
                 
                 let responseData = try JSONEncoder().encode(response)
                 guard let stringifiedResponse = String(data: responseData, encoding: .utf8) else {
-                    return reject(CODE_RESPONSE_INVALID, responseError, nil)
+                    return reject(CODE_RESPONSE_INVALID, MESSAGE_RESPONSE_INVALID, nil)
                 }
                 resolve(stringifiedResponse)
                 
