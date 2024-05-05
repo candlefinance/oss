@@ -1,5 +1,7 @@
 
 
+## [0.3.1](https://github.com/candlefinance/oss/compare/v0.3.0...v0.3.1) (2024-05-05)
+
 # 0.3.0 (2024-05-05)
 
 
