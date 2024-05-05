@@ -1,6 +1,6 @@
 {
   "name": "@candlefinance/send",
-  "version": "0.2.0",
+  "version": "0.3.2",
   "description": "A fast, low-level networking library",
   "main": "lib/commonjs/index",
   "module": "lib/module/index",
@@ -103,7 +103,7 @@
       "push": true
     },
     "npm": {
-      "publish": false
+      "publish": true
     },
     "github": {
       "release": true
