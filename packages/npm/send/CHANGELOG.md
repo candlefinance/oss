@@ -1,5 +1,13 @@
 
 
+## [0.3.2](https://github.com/candlefinance/oss/compare/v0.3.0...v0.3.2) (2024-05-05)
+
+
+### Bug Fixes
+
+* publish ([1dfe15c](https://github.com/candlefinance/oss/commit/1dfe15cb86cf60bc74d7ee65df4758e37459ae9b))
+* updates ([6e392a1](https://github.com/candlefinance/oss/commit/6e392a17b045588e10d159a33a0ec75834afd417))
+
 # 0.3.0 (2024-05-05)
 
 
