@@ -4,6 +4,7 @@ import com.facebook.react.bridge.Promise
 import com.facebook.react.bridge.ReactApplicationContext
 import com.facebook.react.bridge.ReactContextBaseJavaModule
 import com.facebook.react.bridge.ReactMethod
+import com.facebook.react.modules.network.ReactCookieJarContainer
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
@@ -141,8 +142,12 @@ data class Response(
 class SendModule(reactContext: ReactApplicationContext) : ReactContextBaseJavaModule(reactContext) {
 
   private val client by lazy {
-    OkHttpClient.Builder().callTimeout(60, TimeUnit.SECONDS).connectTimeout(0, TimeUnit.SECONDS)
-      .readTimeout(0, TimeUnit.SECONDS).writeTimeout(0, TimeUnit.SECONDS)
+    OkHttpClient.Builder()
+      .callTimeout(60, TimeUnit.SECONDS)
+      .connectTimeout(0, TimeUnit.SECONDS)
+      .readTimeout(0, TimeUnit.SECONDS)
+      .writeTimeout(0, TimeUnit.SECONDS)
+      .cookieJar(ReactCookieJarContainer())
       .followRedirects(false) // NOTE: This implicitly sets followSslRedirects(false) as well
       .build()
   }
