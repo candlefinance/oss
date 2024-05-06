@@ -1,5 +1,12 @@
 
 
+## [0.3.3](https://github.com/candlefinance/oss/compare/v0.3.2...v0.3.3) (2024-05-05)
+
+
+### Bug Fixes
+
+* **ios:** compiler errors ([38d54b5](https://github.com/candlefinance/oss/commit/38d54b53da2ad47e318fb8b0bb4fc038dc10216a))
+
 ## [0.3.2](https://github.com/candlefinance/oss/compare/v0.3.0...v0.3.2) (2024-05-05)
 
 
