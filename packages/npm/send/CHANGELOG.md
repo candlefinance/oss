@@ -1,5 +1,12 @@
 
 
+## [0.3.4](https://github.com/candlefinance/oss/compare/v0.3.3...v0.3.4) (2024-05-07)
+
+
+### Bug Fixes
+
+* **android:** add back cookie jar ([#12](https://github.com/candlefinance/oss/issues/12)) ([f28841d](https://github.com/candlefinance/oss/commit/f28841d6e39e285aaa605db208a3bd0269abf3d1))
+
 ## [0.3.3](https://github.com/candlefinance/oss/compare/v0.3.2...v0.3.3) (2024-05-05)
 
 
