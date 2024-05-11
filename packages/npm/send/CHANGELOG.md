@@ -1,5 +1,12 @@
 
 
+## [0.3.6](https://github.com/candlefinance/oss/compare/v0.3.5...v0.3.6) (2024-05-11)
+
+
+### Bug Fixes
+
+* **android:** handle okhttp empty response behavior ([#14](https://github.com/candlefinance/oss/issues/14)) ([0fbfa35](https://github.com/candlefinance/oss/commit/0fbfa35c90a048998a2f16f6fb3b0a0a46972998))
+
 ## [0.3.5](https://github.com/candlefinance/oss/compare/v0.3.4...v0.3.5) (2024-05-11)
 
 
