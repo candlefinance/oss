@@ -73,7 +73,7 @@ data class Request(
   val httpUrl: HttpUrl by lazy {
     val urlBuilder = (baseURL + path).toHttpUrl().newBuilder()
     queryParameters.forEach { (key, value) ->
-      urlBuilder.addQueryParameter(key, value)
+      urlBuilder.addEncodedQueryParameter(key, value)
     }
 
     urlBuilder.build()
@@ -127,7 +127,9 @@ data class Response(
         request.utf8ContentTypes
       )
 
-      if (bodyIsGzipped) {
+      if (responseBody.contentLength() == 0L) {
+        null
+      } else if (bodyIsGzipped) {
         val gzipSource = GzipSource(responseBody.source())
         val buffer = Buffer()
         buffer.writeAll(gzipSource)
