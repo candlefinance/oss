@@ -142,7 +142,7 @@ data class Response(
 }
 
 class SendModule(reactContext: ReactApplicationContext) : ReactContextBaseJavaModule(reactContext) {
-  private val cookieManager = PersistentCookieJar(SetCookieCache(), SharedPrefsCookiePersistor(reactContext))
+  private val cookieManager by lazy { PersistentCookieJar(SetCookieCache(), SharedPrefsCookiePersistor(reactContext)) }
 
   private val client by lazy {
     OkHttpClient.Builder()
