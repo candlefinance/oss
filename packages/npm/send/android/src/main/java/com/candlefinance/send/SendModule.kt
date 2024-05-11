@@ -129,7 +129,9 @@ data class Response(
         request.utf8ContentTypes
       )
 
-      if (bodyIsGzipped) {
+      if (responseBody.contentLength() == 0L) {
+        null
+      } else if (bodyIsGzipped) {
         val gzipSource = GzipSource(responseBody.source())
         val buffer = Buffer()
         buffer.writeAll(gzipSource)
