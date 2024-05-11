@@ -4,7 +4,6 @@ import com.facebook.react.bridge.Promise
 import com.facebook.react.bridge.ReactApplicationContext
 import com.facebook.react.bridge.ReactContextBaseJavaModule
 import com.facebook.react.bridge.ReactMethod
-import com.facebook.react.modules.network.ReactCookieJarContainer
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
@@ -32,6 +31,9 @@ import java.util.concurrent.TimeUnit
 import javax.net.ssl.SSLException
 import kotlin.coroutines.resume
 import kotlin.coroutines.resumeWithException
+import java.net.CookieManager
+import java.net.CookiePolicy
+import okhttp3.JavaNetCookieJar
 
 // FIXME: Move to another file or a utilities package
 suspend fun Call.await(): okhttp3.Response = suspendCancellableCoroutine { continuation ->
@@ -73,7 +75,7 @@ data class Request(
   val httpUrl: HttpUrl by lazy {
     val urlBuilder = (baseURL + path).toHttpUrl().newBuilder()
     queryParameters.forEach { (key, value) ->
-      urlBuilder.addQueryParameter(key, value)
+      urlBuilder.addEncodedQueryParameter(key, value)
     }
 
     urlBuilder.build()
@@ -140,6 +142,7 @@ data class Response(
 }
 
 class SendModule(reactContext: ReactApplicationContext) : ReactContextBaseJavaModule(reactContext) {
+  private val cookieManager = CookieManager(PersistentCookieStore(reactContext), CookiePolicy.ACCEPT_ALL)
 
   private val client by lazy {
     OkHttpClient.Builder()
@@ -147,7 +150,7 @@ class SendModule(reactContext: ReactApplicationContext) : ReactContextBaseJavaMo
       .connectTimeout(0, TimeUnit.SECONDS)
       .readTimeout(0, TimeUnit.SECONDS)
       .writeTimeout(0, TimeUnit.SECONDS)
-      .cookieJar(ReactCookieJarContainer())
+      .cookieJar(JavaNetCookieJar(cookieManager))
       .followRedirects(false) // NOTE: This implicitly sets followSslRedirects(false) as well
       .build()
   }
