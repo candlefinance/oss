@@ -1,5 +1,12 @@
 
 
+## [0.3.5](https://github.com/candlefinance/oss/compare/v0.3.4...v0.3.5) (2024-05-11)
+
+
+### Bug Fixes
+
+* add cookie store & fix url encoding ([#13](https://github.com/candlefinance/oss/issues/13)) ([f570c3e](https://github.com/candlefinance/oss/commit/f570c3e92fb9c1d1f2f5b2039d342a199ac36a3d))
+
 ## [0.3.4](https://github.com/candlefinance/oss/compare/v0.3.3...v0.3.4) (2024-05-07)
 
 
