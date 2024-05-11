@@ -4,9 +4,9 @@ import com.facebook.react.bridge.Promise
 import com.facebook.react.bridge.ReactApplicationContext
 import com.facebook.react.bridge.ReactContextBaseJavaModule
 import com.facebook.react.bridge.ReactMethod
-import com.franmontiel.persistentcookiejar.PersistentCookieJar
-import com.franmontiel.persistentcookiejar.cache.SetCookieCache
-import com.franmontiel.persistentcookiejar.persistence.SharedPrefsCookiePersistor
+import com.thomasbouvier.persistentcookiejar.PersistentCookieJar
+import com.thomasbouvier.persistentcookiejar.cache.SetCookieCache
+import com.thomasbouvier.persistentcookiejar.persistence.SharedPrefsCookiePersistor
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
