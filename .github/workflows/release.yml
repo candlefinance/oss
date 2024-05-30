@@ -16,9 +16,17 @@ jobs:
         uses: actions/checkout@v3
         with:
           ref: ${{ github.event.pull_request.head.ref }}
+          token: ${{ secrets.CANDLE_ADMIN_PAC }}
 
       - name: Setup
         uses: ./.github/actions/setup
+
+      - name: Modify Git Config
+        run: |
+          git remote -v
+          # git remote set-url origin https://candle-admin:${{ secrets.CANDLE_ADMIN_PAC }}@github.com/candlefinance/oss.git
+          git remote set-url origin https://${{ secrets.CANDLE_ADMIN_PAC }}@github.com/candlefinance/oss
+          git remote -v
 
       - name: Initialize the Npm Config
         run: npm config set //registry.npmjs.org/:_authToken $NPM_TOKEN
