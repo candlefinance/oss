@@ -1,0 +1,17 @@
+name: PRs
+on:
+  pull_request:
+    branches:
+      - main
+
+jobs:
+  prs:
+    strategy:
+      fail-fast: false
+      matrix:
+        workingDirectory: [ "packages/npm/send" ]
+    uses: ./.github/workflows/ci.yml
+    with:
+      workingDirectory: ${{ matrix.workingDirectory }}
+    secrets: inherit
+    name: ${{ matrix.workingDirectory }}
