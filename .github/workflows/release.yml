@@ -31,5 +31,5 @@ jobs:
       - name: Publish package
         run: yarn release
         env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GITHUB_TOKEN: ${{ secrets.CANDLE_ADMIN_PAC }}
           NPM_TOKEN: ${{ secrets.NPM_TOKEN }}

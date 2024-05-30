@@ -98,7 +98,7 @@
   },
   "release-it": {
     "git": {
-      "requiredBranch": "main",
+      "requiredBranch": "foobar",
       "commitMessage": "chore: release ${version}",
       "tagName": "v${version}",
       "push": true
