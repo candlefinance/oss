@@ -50,7 +50,7 @@
   },
   "homepage": "https://github.com/candlefinance/oss#readme",
   "publishConfig": {
-    "registry": "https://registry.npmjs.org/"
+    "registry": "https://npm.pkg.github.com/"
   },
   "devDependencies": {
     "@commitlint/config-conventional": "^17.0.2",
@@ -114,9 +114,6 @@
         "preset": "angular",
         "infile": "CHANGELOG.md"
       }
-    },
-    "publishConfig": {
-      "registry": "https://registry.npmjs.org/"
     }
   },
   "eslintConfig": {
