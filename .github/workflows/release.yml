@@ -10,12 +10,15 @@ defaults:
 
 jobs:
   release:
+    # If this is not here, CICD committing the changelog back will kick off a job to commit back the changelog (infinite loop)
+    if: github.actor != 'candle-admin'
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
         uses: actions/checkout@v3
         with:
           ref: ${{ github.event.pull_request.head.ref }}
+          token: ${{ secrets.CANDLE_ADMIN_PAT }}
 
       - name: Setup
         uses: ./.github/actions/setup
