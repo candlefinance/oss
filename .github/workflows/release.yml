@@ -28,11 +28,34 @@ jobs:
         env:
           NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
 
+      - name: Re-configure publishing for npmjs
+        run: |
+          sed -i 's#    "registry": "https://npm.pkg.github.com/"#    "registry": "https://registry.npmjs.org/"#' package.json
+          sed -i 's#      "push": true#      "push": false' package.json
+          sed -i 's#      "release": true#      "release": false' package.json
+          git update-index --assume-unchanged package.json
+
       - name: Build package
         run: yarn prepare
 
-      - name: Publish package
+      - name: Publish package to npmjs
+        run: yarn release
+        env:
+          NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
+
+      - name: Initialize the git registry Config
+        run: npm config set //npm.pkg.github.com/:_authToken=$GITHUB_TOKEN
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Re-configure publishing for GitHub Packages
+        run: |
+          sed -i 's#    "registry": "https://registry.npmjs.org/"#    "registry": "https://npm.pkg.github.com/"#' package.json
+          sed -i 's#      "push": false#      "push": true' package.json
+          sed -i 's#      "release": false#      "release": true' package.json
+          git update-index --no-assume-unchanged package.json
+
+      - name: Publish package to GitHub
         run: yarn release
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
