@@ -1,3 +1,7 @@
+
+
+## 0.3.8 (2024-05-30)
+
 ## [0.3.7](https://github.com/candlefinance/oss/compare/v0.3.6...v0.3.7) (2024-05-30)
 
 
