@@ -1,9 +1,17 @@
+## [0.3.8](https://github.com/candlefinance/oss/compare/v0.3.7...v0.3.8) (2024-05-30)
+
+
+### Features
+
+* **ci:** update changelog on main automatically ([a51db3c](https://github.com/candlefinance/oss/commit/a51db3ce4a388775c8d05492543175ea26ea6143))
+
+
 ## [0.3.7](https://github.com/candlefinance/oss/compare/v0.3.6...v0.3.7) (2024-05-30)
 
 
 ### Features
 
-* **ci:** handle publishing packages automatically on merge to master ([62c9334](https://github.com/candlefinance/oss/commit/62c933412e46958e8aad02269ce7accd798395f4))
+* **ci:** handle publishing packages automatically on merge to main ([62c9334](https://github.com/candlefinance/oss/commit/62c933412e46958e8aad02269ce7accd798395f4))
 
 
 ## [0.3.6](https://github.com/candlefinance/oss/compare/v0.3.5...v0.3.6) (2024-05-11)
