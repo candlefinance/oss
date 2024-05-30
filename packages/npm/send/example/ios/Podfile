@@ -37,5 +37,7 @@ target 'SendExample' do
       :mac_catalyst_enabled => false,
       # :ccache_enabled => true
     )
+    puts 'Removing xcode.env.local'
+    system('rm -f ./.xcode.env.local')
   end
 end
