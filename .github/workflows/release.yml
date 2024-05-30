@@ -2,7 +2,7 @@ name: Release
 on:
   push:
     branches:
-      - main
+      - fix-github-package
 
 defaults:
   run:
@@ -23,16 +23,25 @@ jobs:
       - name: Setup
         uses: ./.github/actions/setup
 
-      - name: Initialize the Npm Config
-        run: npm config set //registry.npmjs.org/:_authToken $NPM_TOKEN
-        env:
-          NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
+      # - name: Initialize the Npm Config
+      #   run: npm config set //registry.npmjs.org/:_authToken $NPM_TOKEN
+      #   env:
+      #     NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
 
       - name: Build package
         run: yarn prepare
 
-      - name: Publish package
+      # - name: Publish package to npmjs
+      #   run: yarn release
+      #   env:
+      #     NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
+
+      - name: Initialize the git registry Config
+        run: npm config set //npm.pkg.github.com/:_authToken=$GITHUB_TOKEN
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Publish package to GitHub
         run: yarn release
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
