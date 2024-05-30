@@ -98,6 +98,7 @@
   },
   "release-it": {
     "git": {
+      "requiredBranch": "main",
       "commitMessage": "chore: release ${version}",
       "tagName": "v${version}",
       "push": true
@@ -113,6 +114,9 @@
         "preset": "angular",
         "infile": "CHANGELOG.md"
       }
+    },
+    "publishConfig": {
+      "registry": "https://registry.npmjs.org/"
     }
   },
   "eslintConfig": {
