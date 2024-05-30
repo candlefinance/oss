@@ -1,3 +1,9 @@
+## [0.3.7](https://github.com/candlefinance/oss/compare/v0.3.6...v0.3.7) (2024-05-30)
+
+
+### Features
+
+* **ci:** handle publishing packages automatically on merge to master ([62c9334](https://github.com/candlefinance/oss/commit/62c933412e46958e8aad02269ce7accd798395f4))
 
 
 ## [0.3.6](https://github.com/candlefinance/oss/compare/v0.3.5...v0.3.6) (2024-05-11)
