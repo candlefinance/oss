@@ -1,16 +1,18 @@
-name: CI
-on:
-  pull_request:
-    branches:
-      - main
+name: Shared CI
 
-defaults:
-  run:
-    working-directory: "packages/npm/send"
+on:
+  workflow_call:
+    inputs:
+      workingDirectory:
+        required: true
+        type: string
 
 jobs:
   lint:
     runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: ${{ inputs.workingDirectory }}
     steps:
       - name: Checkout
         uses: actions/checkout@v3
@@ -26,6 +28,9 @@ jobs:
 
   test:
     runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: ${{ inputs.workingDirectory }}
     steps:
       - name: Checkout
         uses: actions/checkout@v3
@@ -38,6 +43,9 @@ jobs:
 
   build-library:
     runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: ${{ inputs.workingDirectory }}
     steps:
       - name: Checkout
         uses: actions/checkout@v3
@@ -50,6 +58,9 @@ jobs:
 
   build-android:
     runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: ${{ inputs.workingDirectory }}
     env:
       TURBO_CACHE_DIR: .turbo/android
     steps:
@@ -106,6 +117,9 @@ jobs:
 
   build-ios:
     runs-on: macos-14
+    defaults:
+      run:
+        working-directory: ${{ inputs.workingDirectory }}
     env:
       TURBO_CACHE_DIR: .turbo/ios
     steps:
