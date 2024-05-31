@@ -1,16 +1,16 @@
-name: PRs
+name: Test
 on:
   pull_request:
     branches:
       - main
 
 jobs:
-  prs:
+  tests:
     strategy:
       fail-fast: false
       matrix:
         workingDirectory: [ "packages/npm/send" ]
-    uses: ./.github/workflows/ci.yml
+    uses: ./.github/workflows/tests_shared.yml
     with:
       workingDirectory: ${{ matrix.workingDirectory }}
     secrets: inherit

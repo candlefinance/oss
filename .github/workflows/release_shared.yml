@@ -1,0 +1,62 @@
+name: Release
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  release:
+    # If this is not here, CICD committing the changelog back will kick off a job to commit back the changelog (infinite loop)
+    if: github.actor != 'candle-admin'
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: "packages/npm/send"
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+        with:
+          ref: ${{ github.event.pull_request.head.ref }}
+          token: ${{ secrets.CANDLE_ADMIN_PAT }}
+
+      - name: Setup
+        uses: ./.github/actions/setup
+
+      - name: Initialize the Npm Config
+        run: npm config set //registry.npmjs.org/:_authToken $NPM_TOKEN
+        env:
+          NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
+
+      - name: Re-configure publishing for npmjs
+        run: |
+          sed -i 's#    "registry": "https://npm.pkg.github.com/"#    "registry": "https://registry.npmjs.org/"#' package.json
+          sed -i 's#      "push": true#      "push": false#' package.json
+          sed -i 's#      "release": true#      "release": false#' package.json
+          git update-index --assume-unchanged package.json
+          git update-index --assume-unchanged CHANGELOG.md
+
+      - name: Build package
+        run: yarn prepare
+
+      - name: Publish package to npmjs
+        run: yarn release
+        env:
+          NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
+
+      - name: Initialize the git registry Config
+        run: npm config set //npm.pkg.github.com/:_authToken=$GITHUB_TOKEN
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Re-configure publishing for GitHub Packages
+        run: |
+          git update-index --no-assume-unchanged package.json
+          git update-index --no-assume-unchanged CHANGELOG.md
+          git checkout package.json
+          git checkout CHANGELOG.md
+          git tag -d $(git tag -l)
+
+      - name: Publish package to GitHub
+        run: yarn release
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
