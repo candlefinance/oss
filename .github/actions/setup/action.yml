@@ -1,13 +1,18 @@
 name: Setup
 description: Setup Node.js and install dependencies
 
+inputs:
+  workingDirectory:
+    required: true
+    type: string
+
 runs:
   using: composite
   steps:
     - name: Setup Node.js
       uses: actions/setup-node@v3
       with:
-        node-version-file: packages/npm/send/.nvmrc
+        node-version-file: ${{ inputs.workingDirectory }}/.nvmrc
 
     - name: Set up Git
       shell: bash
@@ -20,8 +25,8 @@ runs:
       uses: actions/cache@v3
       with:
         path: |
-          packages/npm/send/**/node_modules
-          packages/npm/send/.yarn/install-state.gz
+          ${{ inputs.workingDirectory }}/**/node_modules
+          ${{ inputs.workingDirectory }}/.yarn/install-state.gz
         key: ${{ runner.os }}-yarn-${{ hashFiles('yarn.lock') }}-${{ hashFiles('**/package.json', '!node_modules/**') }}
         restore-keys: |
           ${{ runner.os }}-yarn-${{ hashFiles('yarn.lock') }}
@@ -30,5 +35,5 @@ runs:
     - name: Install dependencies
       if: steps.yarn-cache.outputs.cache-hit != 'true'
       run: yarn install --immutable
-      working-directory: packages/npm/send
+      working-directory: ${{ inputs.workingDirectory }}
       shell: bash

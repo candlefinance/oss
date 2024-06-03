@@ -19,6 +19,8 @@ jobs:
 
       - name: Setup
         uses: ./.github/actions/setup
+        with:
+          workingDirectory: ${{ inputs.workingDirectory }}
 
       - name: Lint files
         run: yarn lint
@@ -37,6 +39,8 @@ jobs:
 
       - name: Setup
         uses: ./.github/actions/setup
+        with:
+          workingDirectory: ${{ inputs.workingDirectory }}
 
       - name: Run unit tests
         run: yarn test --maxWorkers=2 --coverage
@@ -52,6 +56,8 @@ jobs:
 
       - name: Setup
         uses: ./.github/actions/setup
+        with:
+          workingDirectory: ${{ inputs.workingDirectory }}
 
       - name: Build package
         run: yarn prepare
@@ -69,6 +75,8 @@ jobs:
 
       - name: Setup
         uses: ./.github/actions/setup
+        with:
+          workingDirectory: ${{ inputs.workingDirectory }}
 
       - name: Cache turborepo for Android
         uses: actions/cache@v3
@@ -128,6 +136,8 @@ jobs:
 
       - name: Setup
         uses: ./.github/actions/setup
+        with:
+          workingDirectory: ${{ inputs.workingDirectory }}
 
       - name: Cache turborepo for iOS
         uses: actions/cache@v3
