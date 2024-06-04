@@ -140,6 +140,7 @@
     "lib/"
   ],
   "prettier": {
+    "semi": false,
     "quoteProps": "consistent",
     "singleQuote": true,
     "tabWidth": 2,
@@ -161,3 +162,4 @@
     ]
   }
 }
+

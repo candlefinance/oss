@@ -1,7 +1,7 @@
-import * as React from 'react';
+import * as React from 'react'
 
-import { send } from '@candlefinance/send';
-import { StyleSheet, Text, View } from 'react-native';
+import { send } from '@candlefinance/send'
+import { StyleSheet, Text, View } from 'react-native'
 
 export const serializeError = (error: unknown) => {
   if (error instanceof Error) {
@@ -10,14 +10,14 @@ export const serializeError = (error: unknown) => {
       message: error.message,
       stack: error.stack ?? 'NOT_INCLUDED',
       name: error.name,
-    });
+    })
   } else {
-    return JSON.stringify(error);
+    return JSON.stringify(error)
   }
-};
+}
 
 export default function App() {
-  const [result, setResult] = React.useState<string>('waiting...');
+  const [result, setResult] = React.useState<string>('waiting...')
 
   React.useEffect(() => {
     send({
@@ -37,20 +37,20 @@ export default function App() {
       },
     })
       .then((response) => {
-        console.log('SUCCESS', response);
-        setResult(response.body ?? 'no body');
+        console.log('SUCCESS', response)
+        setResult(response.body ?? 'no body')
       })
       .catch((error) => {
-        console.log('FAILURE', serializeError(error));
-        setResult(`[${error.code}] ${error.message}`);
-      });
-  }, []);
+        console.log('FAILURE', serializeError(error))
+        setResult(`[${error.code}] ${error.message}`)
+      })
+  }, [])
 
   return (
     <View style={styles.container}>
       <Text>Result: {result}</Text>
     </View>
-  );
+  )
 }
 
 const styles = StyleSheet.create({
@@ -64,4 +64,4 @@ const styles = StyleSheet.create({
     height: 60,
     marginVertical: 20,
   },
-});
+})
