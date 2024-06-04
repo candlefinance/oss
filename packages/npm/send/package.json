@@ -83,7 +83,7 @@
   "workspaces": [
     "example"
   ],
-  "packageManager": "yarn@3.6.1",
+  "packageManager": "yarn@4.2.2",
   "jest": {
     "preset": "react-native",
     "modulePathIgnorePatterns": [
@@ -140,6 +140,7 @@
     "lib/"
   ],
   "prettier": {
+    "semi": false,
     "quoteProps": "consistent",
     "singleQuote": true,
     "tabWidth": 2,
