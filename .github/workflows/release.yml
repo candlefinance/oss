@@ -10,7 +10,10 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        workingDirectory: [ "packages/npm/send" ]
+        workingDirectory: [ 
+          "packages/npm/send",
+          "packages/npm/financekit",
+        ]
     uses: ./.github/workflows/release_shared.yml
     with:
       workingDirectory: ${{ matrix.workingDirectory }}
