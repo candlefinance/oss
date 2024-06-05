@@ -1,6 +1,6 @@
 {
   "name": "@candlefinance/send",
-  "version": "0.3.14",
+  "version": "0.0.1",
   "description": "A fast, low-level networking library",
   "main": "lib/commonjs/index",
   "module": "lib/module/index",
@@ -98,16 +98,16 @@
   },
   "release-it": {
     "git": {
-      "requiredBranch": "main",
+      "requiredBranch": "foobar",
       "commitMessage": "chore: release ${version}",
       "tagName": "v${version}",
-      "push": true
+      "push": false
     },
     "npm": {
-      "publish": true
+      "publish": false
     },
     "github": {
-      "release": true
+      "release": false
     },
     "plugins": {
       "@release-it/conventional-changelog": {

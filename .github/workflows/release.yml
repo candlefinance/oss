@@ -3,19 +3,85 @@ name: Release
 on:
   push:
     branches:
-      - main
+      - foobar2
 
 jobs:
-  release:
+  publish-npm-packages:
     strategy:
       fail-fast: false
       matrix:
-        workingDirectory: [ 
-          "packages/npm/send",
-          "packages/npm/financekit",
-        ]
+        workingDirectory: ["packages/npm/send", "packages/npm/financekit"]
     uses: ./.github/workflows/release_shared.yml
     with:
       workingDirectory: ${{ matrix.workingDirectory }}
     secrets: inherit
     name: ${{ matrix.workingDirectory }}
+
+  publish-github-release-and-tag:
+    # If this is not here, CICD committing the changelog back will kick off a job to commit back the changelog (infinite loop)
+    if: github.actor != 'candle-admin'
+    runs-on: ubuntu-latest
+    needs: [publish-npm-packages]
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+        with:
+          ref: ${{ github.event.pull_request.head.ref }}
+          token: ${{ secrets.CANDLE_ADMIN_PAT }}
+
+          # This would need to run for all of them, ideally in parallel...should see if things can be done without this step
+      # - name: Setup
+      #   uses: ./.github/actions/setup
+      #   with:
+      #     workingDirectory: ${{ inputs.workingDirectory }}
+
+      # TODO: If stuff like this is needed, can use bash parallelization &/wait
+      # Hopefully not needed... ?
+      # - name: Build package
+      # run: yarn prepare
+
+      - name: Re-configure publishing
+        run: |
+          # sed -i 's#    "registry": "https://npm.pkg.github.com/"#    "registry": "https://registry.npmjs.org/"#' packages/npm/*/package.json
+          declare -a packages=["packages/npm/send", "packages/npm/financekit"]
+          for package in "${packages[@]}"; do
+            cd $package
+            yarn release
+            echo "currentTag=$(git tag --points-at HEAD)" >> $GITHUB_ENV
+            git tag -d $(git tag -l)
+            git reset HEAD~
+            git update-index --assume-unchanged CHANGELOG.md
+            git update-index --assume-unchanged package.json
+            cd ../../..
+          done
+          for package in "${packages[@]}"; do
+            git update-index --assume-no-unchanged $package/CHANGELOG.md
+            git update-index --assume-no-unchanged $package/package.json
+          done
+          git add .
+          git commit -m "chore: release $currentTag"
+          git tag -a $currentTag -m "chore: release $currentTag"
+          git push --tags
+          cd packages/npm/send
+          sed -i 's#      "release": false#      "release": true#' package.json
+          sed -i 's#    "release": "release-it --ci"#    "release": "release-it --ci --no-git --no-increment"#' package.json
+          yarn release
+
+      - name: Publish package to GitHub
+        run: yarn release
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+# Idea:
+# run all releases in parallel doing only publishing to both places
+# in this part, for each service run `yarn release` with push:false then save tag in ENV, delete all tags, grab the commit message and save it to ENV, re-stage the most recent commit, git ignore relevant files
+# Lastly un-ignore all files, add and commit with saved commit message, tag and push with saved tag, run once for one service with publish:false, push:false, --no-git --no-increment flags to push the release
+
+# TODO: Re-check all seds
+# TODO: Ensure that by the last steps where the commit happens that the only change left in package.json is the version bump
+
+# TODO: Need to swap things around so that we handle committing/tagging/releasing FIRST, THEN push all the npm packages in parallel
+# Better for retry handling - otherwise if a publish fails to commit then the retry will fail to publish over vs this way it'll bump the version again and hopefully succeed
+#
+# current plan is to comment out send on main and make sure financekit works, then come back to this later.
+
+#
