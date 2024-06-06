@@ -1,7 +1,7 @@
 {
   "name": "@candlefinance/financekit",
   "version": "0.3.15",
-  "description": "A fast, low-level networking library",
+  "description": "Wraps FinanceKit on iOS for consumption in React Native.",
   "main": "lib/commonjs/index",
   "module": "lib/module/index",
   "types": "lib/typescript/src/index.d.ts",
