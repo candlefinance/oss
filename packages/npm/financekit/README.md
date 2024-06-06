@@ -14,8 +14,6 @@ npm install @candlefinance/financekit
 // TODO: document usages
 
 // ...
-
-// TODO
 ```
 
 ## Contributing
