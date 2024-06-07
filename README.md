@@ -6,7 +6,8 @@ A mono-repo containing all of Candle's open-source projects, which are primarily
 
 Each package is currently within a separate directory within this repo, and each is published as an independent package on NPM:
 
-| Package Name        | Directory                               | Description                          |
-| :------------------ | :-------------------------------------- | :----------------------------------- |
-| @candlefinance/send | [/packages/npm/send](packages/npm/send) | A fast, low-level networking library |
-| @candlefinance/kit  | [/packages/npm/kit](packages/npm/kit)   | Program your money (coming soon)     |
+| Package Name               | Directory                                                     | Description                                             |
+| :------------------        | :--------------------------------------                       | :-----------------------------------                    |
+| @candlefinance/send        | [/packages/npm/send](packages/npm/send)                       | A fast, memory-efficient image library for React Native |
+| @candlefinance/fasterimage | [https://github.com/candlefinance/faster-image](External repo) | A fast, low-level networking library for React Native   |
+| @candlefinance/kit         | Coming soon                                                   | Program your money                                      |
