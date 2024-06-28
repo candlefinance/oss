@@ -1741,7 +1741,7 @@ __metadata:
     react-native-builder-bob: "npm:^0.23.2"
     release-it: "npm:^15.0.0"
     turbo: "npm:^1.10.7"
-    typescript: "npm:^5.2.2"
+    typescript: "npm:^5.5.2"
   peerDependencies:
     react: "*"
     react-native: "*"
@@ -1955,13 +1955,13 @@ __metadata:
   linkType: hard
 
 "@effect/schema@npm:^0.68.2":
-  version: 0.68.11
-  resolution: "@effect/schema@npm:0.68.11"
+  version: 0.68.12
+  resolution: "@effect/schema@npm:0.68.12"
   dependencies:
     fast-check: "npm:^3.19.0"
   peerDependencies:
-    effect: ^3.4.4
-  checksum: 10c0/b2b33e0a45605854c102e50f66a09f2c6e048b9fb7b67c9f18933de67d56bd8acbc4e3be9ad89bf08ae1d0b923e1c2a507a168c1b36bbeb99b1d4008b3c8f926
+    effect: ^3.4.5
+  checksum: 10c0/0eb85c3544e2cda7c0c16dd6a63baa569de91cdf7a5e670f4dc7d60ff40e507e8766d4764a5c0f31351ac63a87ba4b1f87a0fede5f19cd5a798b77c1cd94b479
   languageName: node
   linkType: hard
 
@@ -3691,11 +3691,11 @@ __metadata:
   linkType: hard
 
 "@types/node@npm:*":
-  version: 20.14.8
-  resolution: "@types/node@npm:20.14.8"
+  version: 20.14.9
+  resolution: "@types/node@npm:20.14.9"
   dependencies:
     undici-types: "npm:~5.26.4"
-  checksum: 10c0/06d4643fa3b179b41fe19f9c75c240278ca1f7a313b3b837bc36ea119499c7ad77f06bbe72694ac04aa91ec77fe747baa09b889f4c435450c1724a26bd55f160
+  checksum: 10c0/911ffa444dc032897f4a23ed580c67903bd38ea1c5ec99b1d00fa10b83537a3adddef8e1f29710cbdd8e556a61407ed008e06537d834e48caf449ce59f87d387
   languageName: node
   linkType: hard
 
@@ -4813,9 +4813,9 @@ __metadata:
   linkType: hard
 
 "caniuse-lite@npm:^1.0.30001629":
-  version: 1.0.30001636
-  resolution: "caniuse-lite@npm:1.0.30001636"
-  checksum: 10c0/e5f965b4da7bae1531fd9f93477d015729ff9e3fa12670ead39a9e6cdc4c43e62c272d47857c5cc332e7b02d697cb3f2f965a1030870ac7476da60c2fc81ee94
+  version: 1.0.30001638
+  resolution: "caniuse-lite@npm:1.0.30001638"
+  checksum: 10c0/33019e0c53ed73f1e728b6f313efed2d7a25710dfa2ad3924d2be9939df10d0991556ac87523d3177d472c246654c9216f03e5532717ed97df58014728c3e798
   languageName: node
   linkType: hard
 
@@ -5960,16 +5960,16 @@ __metadata:
   linkType: hard
 
 "effect@npm:^3.3.5":
-  version: 3.4.4
-  resolution: "effect@npm:3.4.4"
-  checksum: 10c0/60e396d970be3e4d80a56f8fdfcd270c8eb8769e90d0b760567872579aeb35437a9b28f303c1c353e15cc5c5b14ef8662acfc6620b1c9532479edb3ba16f889b
+  version: 3.4.5
+  resolution: "effect@npm:3.4.5"
+  checksum: 10c0/a848b3f4be8f7c49d9bf259be1dda53d9883ed062ca18f6f20af5111c4901f964542a44c43910d13b764fe4808dbd6305ad37b18832c811d9783a9cd3296366e
   languageName: node
   linkType: hard
 
 "electron-to-chromium@npm:^1.4.796":
-  version: 1.4.810
-  resolution: "electron-to-chromium@npm:1.4.810"
-  checksum: 10c0/0fed53e156aab30d71f2d6fd3bcd818755cee6aab3316e497c1f92424b4ef628f9faf1cf3cc2b4bcacc91c6a58d4e610202c4aa23cf91d7fbe77f82144bdc0ba
+  version: 1.4.813
+  resolution: "electron-to-chromium@npm:1.4.813"
+  checksum: 10c0/c44220c6f4de45ee350680cde29fdff35b619a0087d4035f19d510b806fdfcfc48acb87bde3669a1743a894e29237309f46a44345039fe5cacfc67c81c17739f
   languageName: node
   linkType: hard
 
@@ -6927,9 +6927,9 @@ __metadata:
   linkType: hard
 
 "flow-parser@npm:0.*":
-  version: 0.238.1
-  resolution: "flow-parser@npm:0.238.1"
-  checksum: 10c0/1db4b15e82880f065c7727a16d83b09908a05bfdb4b23a508e25bb346a2fb34409046b706afe61f6135afe71b24c380b7752f32021caa9ec23545746dd5a9ab3
+  version: 0.238.3
+  resolution: "flow-parser@npm:0.238.3"
+  checksum: 10c0/29169c2b17fb55e42f3533b79f68a0258287e730e107dab5abb3a7888e477cec3c515516bb58c08f5c059e131792f2872e2e80b66482e178de7c373b7e333b25
   languageName: node
   linkType: hard
 
@@ -10013,11 +10013,11 @@ __metadata:
   linkType: hard
 
 "minimatch@npm:^9.0.4":
-  version: 9.0.4
-  resolution: "minimatch@npm:9.0.4"
+  version: 9.0.5
+  resolution: "minimatch@npm:9.0.5"
   dependencies:
     brace-expansion: "npm:^2.0.1"
-  checksum: 10c0/2c16f21f50e64922864e560ff97c587d15fd491f65d92a677a344e970fe62aafdbeafe648965fa96d33c061b4d0eabfe0213466203dd793367e7f28658cf6414
+  checksum: 10c0/de96cf5e35bdf0eab3e2c853522f98ffbe9a36c37797778d2665231ec1f20a9447a7e567cb640901f89e4daaa95ae5d70c65a9e8aa2bb0019b6facbc3c0575ed
   languageName: node
   linkType: hard
 
@@ -11266,12 +11266,12 @@ __metadata:
   linkType: hard
 
 "react-devtools-core@npm:^5.0.0":
-  version: 5.2.0
-  resolution: "react-devtools-core@npm:5.2.0"
+  version: 5.3.0
+  resolution: "react-devtools-core@npm:5.3.0"
   dependencies:
     shell-quote: "npm:^1.6.1"
     ws: "npm:^7"
-  checksum: 10c0/82bd2146b87214c3199b68b6c68cca661cb3975cf8a1673475b5066a4e9deac0c969b7848ff9fde6bbe288e4c188753abbe51d9b329cd58608c3529b08977f35
+  checksum: 10c0/cb2f050e322602fd67b40e5aeaa8245a4e812a5d2f8483584329cb507f5a6ce93325d91358c06fb8331cfc7b4149a6e98a3609ec1416931a0ea29cd9633feffa
   languageName: node
   linkType: hard
 
@@ -13209,7 +13209,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"typescript@npm:^4.6.4 || ^5.2.2, typescript@npm:^5.2.2":
+"typescript@npm:^4.6.4 || ^5.2.2, typescript@npm:^5.5.2":
   version: 5.5.2
   resolution: "typescript@npm:5.5.2"
   bin:
@@ -13219,7 +13219,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"typescript@patch:typescript@npm%3A^4.6.4 || ^5.2.2#optional!builtin<compat/typescript>, typescript@patch:typescript@npm%3A^5.2.2#optional!builtin<compat/typescript>":
+"typescript@patch:typescript@npm%3A^4.6.4 || ^5.2.2#optional!builtin<compat/typescript>, typescript@patch:typescript@npm%3A^5.5.2#optional!builtin<compat/typescript>":
   version: 5.5.2
   resolution: "typescript@patch:typescript@npm%3A5.5.2#optional!builtin<compat/typescript>::version=5.5.2&hash=b45daf"
   bin:

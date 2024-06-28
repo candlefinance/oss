@@ -1,6 +1,11 @@
 import { Schema as S } from '@effect/schema'
-import { Effect as E, flow, pipe } from 'effect'
+import { Effect as E, Option as O, flow, pipe } from 'effect'
 import { NativeModules, Platform } from 'react-native'
+import {
+  discriminateA,
+  oLiftRefinement,
+  type Discriminated,
+} from './discrimination_utils'
 
 const LINKING_ERROR =
   `The package '@candlefinance/financekit' doesn't seem to be linked. Make sure: \n\n` +
@@ -156,33 +161,76 @@ const AccountBalance = S.Struct({
   currentBalance: CurrentBalance,
 })
 
+class FinancekitError extends S.TaggedError<FinancekitError>()(
+  'FinancekitError',
+  {
+    code: S.Literal(
+      '@candlefinance.financekit.account_balances_invalid',
+      '@candlefinance.financekit.account_balance_history_invalid',
+      '@candlefinance.financekit.accounts_invalid',
+      '@candlefinance.financekit.os_version_too_low',
+      '@candlefinance.financekit.params_invalid',
+      '@candlefinance.financekit.query_invalid',
+      '@candlefinance.financekit.transaction_history_invalid',
+      '@candlefinance.financekit.transactions_invalid',
+      '@candlefinance.financekit.unknown',
+      '@candlefinance.financekit.unknown_account_type',
+      '@candlefinance.financekit.unknown_authorization_status',
+      '@candlefinance.financekit.unknown_current_balance_type',
+      '@candlefinance.financekit.unknown_parsing_error'
+    ),
+    backingError: S.Any,
+  }
+) {}
+
+const makeError = <CODE extends String & FinancekitError['code']>(
+  error: any,
+  code: CODE
+): Discriminated<FinancekitError, 'code', CODE> =>
+  new FinancekitError({
+    code: code,
+    backingError: error,
+    // TODO: Can this be done without a hard cast?
+  }) as Discriminated<FinancekitError, 'code', CODE>
+
 export function requestAuthorization(): E.Effect<
   typeof AuthorizationStatus.Type,
-  'unknown_authorization_status' | 'unexpected' | 'unsupported_os_version'
+  Discriminated<
+    FinancekitError,
+    'code',
+    | '@candlefinance.financekit.os_version_too_low'
+    | '@candlefinance.financekit.unknown'
+    | '@candlefinance.financekit.unknown_authorization_status'
+    | '@candlefinance.financekit.unknown_parsing_error'
+  >
 > {
   return pipe(
     E.tryPromise({
       try: financekitNativeModule.requestAuthorization,
-      catch: (error) => {
-        if (error instanceof Error && 'code' in error) {
-          switch (error.code) {
-            case '@candlefinance.financekit.unknown_authorization_status':
-              return 'unknown_authorization_status'
-            case '@candlefinance.financekit.os_version_too_low':
-              return 'unsupported_os_version'
-            case '@candlefinance.financekit.unknown':
-            default:
-              return 'unexpected'
-          }
-        } else {
-          return 'unexpected'
-        }
-      },
+      catch: (error) =>
+        pipe(
+          error,
+          S.decodeUnknownOption(FinancekitError),
+          O.flatMap(
+            oLiftRefinement(
+              discriminateA('code', [
+                '@candlefinance.financekit.os_version_too_low',
+                '@candlefinance.financekit.unknown',
+                '@candlefinance.financekit.unknown_authorization_status',
+              ])
+            )
+          ),
+          O.getOrElse(() =>
+            makeError(error, '@candlefinance.financekit.unknown_parsing_error')
+          )
+        ),
     }),
     E.flatMap(
       flow(
         S.decode(S.parseJson(AuthorizationStatus)),
-        E.mapError(() => 'unexpected' as const)
+        E.mapError((error) =>
+          makeError(error, '@candlefinance.financekit.unknown_parsing_error')
+        )
       )
     )
   )
@@ -190,31 +238,42 @@ export function requestAuthorization(): E.Effect<
 
 export function authorizationStatus(): E.Effect<
   typeof AuthorizationStatus.Type,
-  'unsupported_os_version' | 'unexpected' | 'unknown_authorization_status'
+  Discriminated<
+    FinancekitError,
+    'code',
+    | '@candlefinance.financekit.os_version_too_low'
+    | '@candlefinance.financekit.unknown_authorization_status'
+    | '@candlefinance.financekit.unknown'
+    | '@candlefinance.financekit.unknown_parsing_error'
+  >
 > {
   return pipe(
     E.tryPromise({
       try: financekitNativeModule.authorizationStatus,
-      catch: (error) => {
-        if (error instanceof Error && 'code' in error) {
-          switch (error.code) {
-            case '@candlefinance.financekit.unknown_authorization_status':
-              return 'unknown_authorization_status'
-            case '@candlefinance.financekit.os_version_too_low':
-              return 'unsupported_os_version'
-            case '@candlefinance.financekit.unknown':
-            default:
-              return 'unexpected'
-          }
-        } else {
-          return 'unexpected'
-        }
-      },
+      catch: (error) =>
+        pipe(
+          error,
+          S.decodeUnknownOption(FinancekitError),
+          O.flatMap(
+            oLiftRefinement(
+              discriminateA('code', [
+                '@candlefinance.financekit.unknown_authorization_status',
+                '@candlefinance.financekit.os_version_too_low',
+                '@candlefinance.financekit.unknown',
+              ])
+            )
+          ),
+          O.getOrElse(() =>
+            makeError(error, '@candlefinance.financekit.unknown_parsing_error')
+          )
+        ),
     }),
     E.flatMap(
       flow(
         S.decode(S.parseJson(AuthorizationStatus)),
-        E.mapError(() => 'unexpected' as const)
+        E.mapError((error) =>
+          makeError(error, '@candlefinance.financekit.unknown_parsing_error')
+        )
       )
     )
   )
@@ -225,35 +284,54 @@ export function transactions(
   query: typeof Query.Type
 ): E.Effect<
   readonly (typeof Transaction.Type)[],
-  'invalid_query' | 'unexpected' | 'unsupported_os_version'
+  Discriminated<
+    FinancekitError,
+    'code',
+    | '@candlefinance.financekit.query_invalid'
+    | '@candlefinance.financekit.os_version_too_low'
+    | '@candlefinance.financekit.unknown'
+    | '@candlefinance.financekit.unknown_parsing_error'
+    | '@candlefinance.financekit.transactions_invalid'
+  >
 > {
   return pipe(
     query,
     S.encode(S.parseJson(Query)),
-    E.mapError(() => 'invalid_query' as const),
+    E.mapError((error) =>
+      makeError(error, '@candlefinance.financekit.query_invalid')
+    ),
     E.flatMap((stringifiedQuery) =>
       E.tryPromise({
         try: () => financekitNativeModule.transactions(stringifiedQuery),
-        catch: (error) => {
-          if (error instanceof Error && 'code' in error) {
-            switch (error.code) {
-              case '@candlefinance.financekit.os_version_too_low':
-                return 'unsupported_os_version'
-              case '@candlefinance.financekit.query_invalid':
-              case '@candlefinance.financekit.unknown':
-              default:
-                return 'unexpected'
-            }
-          } else {
-            return 'unexpected'
-          }
-        },
+        catch: (error) =>
+          pipe(
+            error,
+            S.decodeUnknownOption(FinancekitError),
+            O.flatMap(
+              oLiftRefinement(
+                discriminateA('code', [
+                  '@candlefinance.financekit.os_version_too_low',
+                  '@candlefinance.financekit.query_invalid',
+                  '@candlefinance.financekit.unknown',
+                  '@candlefinance.financekit.transactions_invalid',
+                ])
+              )
+            ),
+            O.getOrElse(() =>
+              makeError(
+                error,
+                '@candlefinance.financekit.unknown_parsing_error'
+              )
+            )
+          ),
       })
     ),
     E.flatMap(
       flow(
         S.decode(S.parseJson(S.Array(Transaction))),
-        E.mapError(() => 'unexpected' as const)
+        E.mapError((error) =>
+          makeError(error, '@candlefinance.financekit.unknown_parsing_error')
+        )
       )
     )
   )
@@ -263,36 +341,54 @@ export function transactionHistory(
   params: typeof AccountDetailsHistoryParams.Type
 ): E.Effect<
   readonly (typeof Transaction.Type)[],
-  'invalid_params' | 'unexpected' | 'unsupported_os_version'
+  Discriminated<
+    FinancekitError,
+    'code',
+    | '@candlefinance.financekit.params_invalid'
+    | '@candlefinance.financekit.os_version_too_low'
+    | '@candlefinance.financekit.unknown'
+    | '@candlefinance.financekit.unknown_parsing_error'
+    | '@candlefinance.financekit.transaction_history_invalid'
+  >
 > {
   return pipe(
     params,
     S.encode(S.parseJson(AccountDetailsHistoryParams)),
-    E.mapError(() => 'invalid_params' as const),
+    E.mapError((error) =>
+      makeError(error, '@candlefinance.financekit.params_invalid')
+    ),
     E.flatMap((stringifiedParams) =>
       E.tryPromise({
         try: () => financekitNativeModule.transactionHistory(stringifiedParams),
-        catch: (error) => {
-          if (error instanceof Error && 'code' in error) {
-            switch (error.code) {
-              case '@candlefinance.financekit.os_version_too_low':
-                return 'unsupported_os_version'
-              case '@candlefinance.financekit.params_invalid':
-              case '@candlefinance.financekit.transaction_history_invalid':
-              case '@candlefinance.financekit.unknown':
-              default:
-                return 'unexpected'
-            }
-          } else {
-            return 'unexpected'
-          }
-        },
+        catch: (error) =>
+          pipe(
+            error,
+            S.decodeUnknownOption(FinancekitError),
+            O.flatMap(
+              oLiftRefinement(
+                discriminateA('code', [
+                  '@candlefinance.financekit.os_version_too_low',
+                  '@candlefinance.financekit.params_invalid',
+                  '@candlefinance.financekit.transaction_history_invalid',
+                  '@candlefinance.financekit.unknown',
+                ])
+              )
+            ),
+            O.getOrElse(() =>
+              makeError(
+                error,
+                '@candlefinance.financekit.unknown_parsing_error'
+              )
+            )
+          ),
       })
     ),
     E.flatMap(
       flow(
         S.decode(S.parseJson(S.Array(Transaction))),
-        E.mapError(() => 'unexpected' as const)
+        E.mapError((error) =>
+          makeError(error, '@candlefinance.financekit.unknown_parsing_error')
+        )
       )
     )
   )
@@ -302,37 +398,56 @@ export function accounts(
   query: typeof Query.Type
 ): E.Effect<
   readonly (typeof Account.Type)[],
-  'invalid_query' | 'unexpected' | 'unsupported_os_version'
+  Discriminated<
+    FinancekitError,
+    'code',
+    | '@candlefinance.financekit.query_invalid'
+    | '@candlefinance.financekit.os_version_too_low'
+    | '@candlefinance.financekit.unknown'
+    | '@candlefinance.financekit.unknown_parsing_error'
+    | '@candlefinance.financekit.unknown_account_type'
+    | '@candlefinance.financekit.accounts_invalid'
+  >
 > {
   return pipe(
     query,
     S.encode(S.parseJson(Query)),
-    E.mapError(() => 'invalid_query' as const),
+    E.mapError((error) =>
+      makeError(error, '@candlefinance.financekit.query_invalid')
+    ),
     E.flatMap((stringifiedQuery) =>
       E.tryPromise({
         try: () => financekitNativeModule.accounts(stringifiedQuery),
-        catch: (error) => {
-          if (error instanceof Error && 'code' in error) {
-            switch (error.code) {
-              case '@candlefinance.financekit.os_version_too_low':
-                return 'unsupported_os_version'
-              case '@candlefinance.financekit.query_invalid':
-              case '@candlefinance.financekit.accounts_invalid':
-              case '@candlefinance.financekit.unknown_account_type':
-              case '@candlefinance.financekit.unknown':
-              default:
-                return 'unexpected'
-            }
-          } else {
-            return 'unexpected'
-          }
-        },
+        catch: (error) =>
+          pipe(
+            error,
+            S.decodeUnknownOption(FinancekitError),
+            O.flatMap(
+              oLiftRefinement(
+                discriminateA('code', [
+                  '@candlefinance.financekit.os_version_too_low',
+                  '@candlefinance.financekit.query_invalid',
+                  '@candlefinance.financekit.accounts_invalid',
+                  '@candlefinance.financekit.unknown_account_type',
+                  '@candlefinance.financekit.unknown',
+                ])
+              )
+            ),
+            O.getOrElse(() =>
+              makeError(
+                error,
+                '@candlefinance.financekit.unknown_parsing_error'
+              )
+            )
+          ),
       })
     ),
     E.flatMap(
       flow(
         S.decode(S.parseJson(S.Array(Account))),
-        E.mapError(() => 'unexpected' as const)
+        E.mapError((error) =>
+          makeError(error, '@candlefinance.financekit.unknown_parsing_error')
+        )
       )
     )
   )
@@ -342,37 +457,56 @@ export function accountHistory(
   params: typeof AccountHistoryParams.Type
 ): E.Effect<
   readonly (typeof Account.Type)[],
-  'invalid_params' | 'unexpected' | 'unsupported_os_version'
+  Discriminated<
+    FinancekitError,
+    'code',
+    | '@candlefinance.financekit.params_invalid'
+    | '@candlefinance.financekit.os_version_too_low'
+    | '@candlefinance.financekit.unknown'
+    | '@candlefinance.financekit.unknown_parsing_error'
+    | '@candlefinance.financekit.transaction_history_invalid'
+    | '@candlefinance.financekit.unknown_account_type'
+  >
 > {
   return pipe(
     params,
     S.encode(S.parseJson(AccountHistoryParams)),
-    E.mapError(() => 'invalid_params' as const),
+    E.mapError((error) =>
+      makeError(error, '@candlefinance.financekit.params_invalid')
+    ),
     E.flatMap((stringifiedParams) =>
       E.tryPromise({
         try: () => financekitNativeModule.accountHistory(stringifiedParams),
-        catch: (error) => {
-          if (error instanceof Error && 'code' in error) {
-            switch (error.code) {
-              case '@candlefinance.financekit.os_version_too_low':
-                return 'unsupported_os_version'
-              case '@candlefinance.financekit.params_invalid':
-              case '@candlefinance.financekit.transaction_history_invalid':
-              case '@candlefinance.financekit.unknown_account_type':
-              case '@candlefinance.financekit.unknown':
-              default:
-                return 'unexpected'
-            }
-          } else {
-            return 'unexpected'
-          }
-        },
+        catch: (error) =>
+          pipe(
+            error,
+            S.decodeUnknownOption(FinancekitError),
+            O.flatMap(
+              oLiftRefinement(
+                discriminateA('code', [
+                  '@candlefinance.financekit.os_version_too_low',
+                  '@candlefinance.financekit.params_invalid',
+                  '@candlefinance.financekit.transaction_history_invalid',
+                  '@candlefinance.financekit.unknown_account_type',
+                  '@candlefinance.financekit.unknown',
+                ])
+              )
+            ),
+            O.getOrElse(() =>
+              makeError(
+                error,
+                '@candlefinance.financekit.unknown_parsing_error'
+              )
+            )
+          ),
       })
     ),
     E.flatMap(
       flow(
         S.decode(S.parseJson(S.Array(Account))),
-        E.mapError(() => 'unexpected' as const)
+        E.mapError((error) =>
+          makeError(error, '@candlefinance.financekit.unknown_parsing_error')
+        )
       )
     )
   )
@@ -382,37 +516,56 @@ export function accountBalances(
   query: typeof Query.Type
 ): E.Effect<
   readonly (typeof AccountBalance.Type)[],
-  'unexpected' | 'unsupported_os_version' | 'invalid_query'
+  Discriminated<
+    FinancekitError,
+    'code',
+    | '@candlefinance.financekit.os_version_too_low'
+    | '@candlefinance.financekit.query_invalid'
+    | '@candlefinance.financekit.unknown'
+    | '@candlefinance.financekit.unknown_parsing_error'
+    | '@candlefinance.financekit.account_balances_invalid'
+    | '@candlefinance.financekit.unknown_current_balance_type'
+  >
 > {
   return pipe(
     query,
     S.encode(S.parseJson(Query)),
-    E.mapError(() => 'invalid_query' as const),
+    E.mapError((error) =>
+      makeError(error, '@candlefinance.financekit.query_invalid')
+    ),
     E.flatMap((stringifiedQuery) =>
       E.tryPromise({
         try: () => financekitNativeModule.accountBalances(stringifiedQuery),
-        catch: (error) => {
-          if (error instanceof Error && 'code' in error) {
-            switch (error.code) {
-              case '@candlefinance.financekit.os_version_too_low':
-                return 'unsupported_os_version'
-              case '@candlefinance.financekit.query_invalid':
-              case '@candlefinance.financekit.account_balances_invalid':
-              case '@candlefinance.financekit.unknown_current_balance_type':
-              case '@candlefinance.financekit.unknown':
-              default:
-                return 'unexpected'
-            }
-          } else {
-            return 'unexpected'
-          }
-        },
+        catch: (error) =>
+          pipe(
+            error,
+            S.decodeUnknownOption(FinancekitError),
+            O.flatMap(
+              oLiftRefinement(
+                discriminateA('code', [
+                  '@candlefinance.financekit.os_version_too_low',
+                  '@candlefinance.financekit.query_invalid',
+                  '@candlefinance.financekit.account_balances_invalid',
+                  '@candlefinance.financekit.unknown_current_balance_type',
+                  '@candlefinance.financekit.unknown',
+                ])
+              )
+            ),
+            O.getOrElse(() =>
+              makeError(
+                error,
+                '@candlefinance.financekit.unknown_parsing_error'
+              )
+            )
+          ),
       })
     ),
     E.flatMap(
       flow(
         S.decode(S.parseJson(S.Array(AccountBalance))),
-        E.mapError(() => 'unexpected' as const)
+        E.mapError((error) =>
+          makeError(error, '@candlefinance.financekit.unknown_parsing_error')
+        )
       )
     )
   )
@@ -422,38 +575,57 @@ export function accountBalanceHistory(
   params: typeof AccountDetailsHistoryParams.Type
 ): E.Effect<
   readonly (typeof AccountBalance.Type)[],
-  'unexpected' | 'unsupported_os_version' | 'invalid_params'
+  Discriminated<
+    FinancekitError,
+    'code',
+    | '@candlefinance.financekit.os_version_too_low'
+    | '@candlefinance.financekit.params_invalid'
+    | '@candlefinance.financekit.unknown'
+    | '@candlefinance.financekit.unknown_parsing_error'
+    | '@candlefinance.financekit.account_balance_history_invalid'
+    | '@candlefinance.financekit.unknown_current_balance_type'
+  >
 > {
   return pipe(
     params,
     S.encode(S.parseJson(AccountDetailsHistoryParams)),
-    E.mapError(() => 'invalid_params' as const),
+    E.mapError((error) =>
+      makeError(error, '@candlefinance.financekit.params_invalid')
+    ),
     E.flatMap((stringifiedParams) =>
       E.tryPromise({
         try: () =>
           financekitNativeModule.accountBalanceHistory(stringifiedParams),
-        catch: (error) => {
-          if (error instanceof Error && 'code' in error) {
-            switch (error.code) {
-              case '@candlefinance.financekit.os_version_too_low':
-                return 'unsupported_os_version'
-              case '@candlefinance.financekit.params_invalid':
-              case '@candlefinance.financekit.account_balance_history_invalid':
-              case '@candlefinance.financekit.unknown_current_balance_type':
-              case '@candlefinance.financekit.unknown':
-              default:
-                return 'unexpected'
-            }
-          } else {
-            return 'unexpected'
-          }
-        },
+        catch: (error) =>
+          pipe(
+            error,
+            S.decodeUnknownOption(FinancekitError),
+            O.flatMap(
+              oLiftRefinement(
+                discriminateA('code', [
+                  '@candlefinance.financekit.os_version_too_low',
+                  '@candlefinance.financekit.params_invalid',
+                  '@candlefinance.financekit.account_balance_history_invalid',
+                  '@candlefinance.financekit.unknown_current_balance_type',
+                  '@candlefinance.financekit.unknown',
+                ])
+              )
+            ),
+            O.getOrElse(() =>
+              makeError(
+                error,
+                '@candlefinance.financekit.unknown_parsing_error'
+              )
+            )
+          ),
       })
     ),
     E.flatMap(
       flow(
         S.decode(S.parseJson(S.parseJson(S.Array(AccountBalance)))),
-        E.mapError(() => 'unexpected' as const)
+        E.mapError((error) =>
+          makeError(error, '@candlefinance.financekit.unknown_parsing_error')
+        )
       )
     )
   )
