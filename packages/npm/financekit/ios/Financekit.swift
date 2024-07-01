@@ -181,7 +181,7 @@ class Financekit: NSObject {
         }
     }
     
-    @objc(transactions:withResolve:withRejecter:)
+    @objc(transactions:withResolver:withRejecter:)
     func transactions(stringifiedQuery: String, resolve: @escaping RCTPromiseResolveBlock, reject: @escaping RCTPromiseRejectBlock) {
         guard #available(iOS 17.4, *) else {
             return reject(CODE_LOW_OS_VERSION, MESSAGE_LOW_OS_VERSION, nil)
@@ -233,7 +233,7 @@ class Financekit: NSObject {
         }
     }
     
-    @objc(accounts:withResolve:withRejecter:)
+    @objc(accounts:withResolver:withRejecter:)
     func accounts(stringifiedQuery: String, resolve: @escaping RCTPromiseResolveBlock, reject: @escaping RCTPromiseRejectBlock) {
         guard #available(iOS 17.4, *) else {
             return reject(CODE_LOW_OS_VERSION, MESSAGE_LOW_OS_VERSION, nil)
@@ -298,7 +298,7 @@ class Financekit: NSObject {
         }
     }
     
-    @objc(accountBalances:withResolve:withRejecter:)
+    @objc(accountBalances:withResolver:withRejecter:)
     func accountBalances(stringifiedQuery: String, resolve: @escaping RCTPromiseResolveBlock, reject: @escaping RCTPromiseRejectBlock) {
         guard #available(iOS 17.4, *) else {
             return reject(CODE_LOW_OS_VERSION, MESSAGE_LOW_OS_VERSION, nil)

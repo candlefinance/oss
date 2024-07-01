@@ -8,8 +8,8 @@ import com.facebook.react.bridge.ReactMethod
 import com.facebook.react.bridge.Promise
 
 class Financekit(reactContext: ReactApplicationContext) : ReactContextBaseJavaModule(reactContext) {
-  override fun getName(): String = "FinanceKit"
-  private fun Promise.rejectionStub() = reject("@candlefinance.financekit.android_not_supported", "This method is not supported on Android", Exception())
+  override fun getName(): String = "Financekit"
+    private fun Promise.rejectionStub() = reject("@candlefinance.financekit.android_not_supported", "This method is not supported on Android", Exception())
 
   @ReactMethod
   fun requestAuthorization(promise: Promise) = promise.resolve("denied")
@@ -18,19 +18,19 @@ class Financekit(reactContext: ReactApplicationContext) : ReactContextBaseJavaMo
   fun authorizationStatus(promise: Promise) = promise.resolve("denied")
 
   @ReactMethod
-  fun transactionsWithStringifiedQuery(stringifiedQuery: String, promise: Promise) = promise.rejectionStub()
+  fun transactions(stringifiedQuery: String, promise: Promise) = promise.rejectionStub()
 
   @ReactMethod
   fun transactionHistory(stringifiedParams: String, promise: Promise) = promise.rejectionStub()
 
   @ReactMethod
-  fun accountsWithStringifiedQuery(stringifiedQuery: String, promise: Promise) = promise.rejectionStub()
+  fun accounts(stringifiedQuery: String, promise: Promise) = promise.rejectionStub()
 
   @ReactMethod
   fun accountHistory(stringifiedParams: String, promise: Promise) = promise.rejectionStub()
 
   @ReactMethod
-  fun accountBalancesWithStringifiedQuery(stringifiedQuery: String, promise: Promise) = promise.rejectionStub()
+  fun accountBalances(stringifiedQuery: String, promise: Promise) = promise.rejectionStub()
 
   @ReactMethod
   fun accountBalanceHistory(stringifiedParams: String, promise: Promise) = promise.rejectionStub()

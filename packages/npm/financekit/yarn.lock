@@ -1714,6 +1714,7 @@ __metadata:
     babel-plugin-module-resolver: "npm:^5.0.0"
     react: "npm:18.2.0"
     react-native: "npm:0.74.1"
+    text-encoding: "npm:^0.7.0"
   languageName: unknown
   linkType: soft
 
@@ -1722,7 +1723,7 @@ __metadata:
   resolution: "@candlefinance/financekit@workspace:."
   dependencies:
     "@commitlint/config-conventional": "npm:^17.0.2"
-    "@effect/schema": "npm:^0.68.2"
+    "@effect/schema": "npm:^0.68.15"
     "@evilmartians/lefthook": "npm:^1.5.0"
     "@react-native/eslint-config": "npm:^0.73.1"
     "@release-it/conventional-changelog": "npm:^5.0.0"
@@ -1730,7 +1731,7 @@ __metadata:
     "@types/react": "npm:^18.2.44"
     commitlint: "npm:^17.0.2"
     del-cli: "npm:^5.1.0"
-    effect: "npm:^3.3.5"
+    effect: "npm:^3.4.6"
     eslint: "npm:^8.51.0"
     eslint-config-prettier: "npm:^9.0.0"
     eslint-plugin-prettier: "npm:^5.0.1"
@@ -1954,14 +1955,14 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@effect/schema@npm:^0.68.2":
-  version: 0.68.12
-  resolution: "@effect/schema@npm:0.68.12"
+"@effect/schema@npm:^0.68.15":
+  version: 0.68.15
+  resolution: "@effect/schema@npm:0.68.15"
   dependencies:
     fast-check: "npm:^3.19.0"
   peerDependencies:
-    effect: ^3.4.5
-  checksum: 10c0/0eb85c3544e2cda7c0c16dd6a63baa569de91cdf7a5e670f4dc7d60ff40e507e8766d4764a5c0f31351ac63a87ba4b1f87a0fede5f19cd5a798b77c1cd94b479
+    effect: ^3.4.6
+  checksum: 10c0/d2baec31f69f63b79d15e7f71e2f326f649b0bf91a5e304f6cbaf8176a5e879c4b4b8430b31f51e4899d563f84865810c79b987f8d5b84afe4ac6e62c6f7202a
   languageName: node
   linkType: hard
 
@@ -5959,10 +5960,10 @@ __metadata:
   languageName: node
   linkType: hard
 
-"effect@npm:^3.3.5":
-  version: 3.4.5
-  resolution: "effect@npm:3.4.5"
-  checksum: 10c0/a848b3f4be8f7c49d9bf259be1dda53d9883ed062ca18f6f20af5111c4901f964542a44c43910d13b764fe4808dbd6305ad37b18832c811d9783a9cd3296366e
+"effect@npm:^3.4.6":
+  version: 3.4.6
+  resolution: "effect@npm:3.4.6"
+  checksum: 10c0/de2e6007f6ef541dbf3a84ee4084c1ae8db1e716186dd480934cf9f094e3c79e88c38d1dc8e074020c52a1687cc6f061808cd5dd25baa8278b31d4652b408e49
   languageName: node
   linkType: hard
 
@@ -12809,6 +12810,13 @@ __metadata:
     glob: "npm:^7.1.4"
     minimatch: "npm:^3.0.4"
   checksum: 10c0/019d33d81adff3f9f1bfcff18125fb2d3c65564f437d9be539270ee74b994986abb8260c7c2ce90e8f30162178b09dbbce33c6389273afac4f36069c48521f57
+  languageName: node
+  linkType: hard
+
+"text-encoding@npm:^0.7.0":
+  version: 0.7.0
+  resolution: "text-encoding@npm:0.7.0"
+  checksum: 10c0/6c20f5d19f996501677cc60b79bc4af550f840b426eacc5f67bd2bd5a7a7a058ab58679f851e0afee879aaaaf7fdb95cfe4de35ab29f9b34f9ce2a7b8de9bacb
   languageName: node
   linkType: hard
 
