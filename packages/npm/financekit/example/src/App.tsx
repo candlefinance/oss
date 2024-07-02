@@ -1,3 +1,5 @@
+import 'fast-text-encoding'
+
 import {
   accountBalanceHistory,
   accountBalances,
@@ -11,11 +13,9 @@ import {
   transactions,
 } from '@candlefinance/financekit'
 import { Effect as E, Option as O, pipe } from 'effect'
-import * as React from 'react'
-
 import type { Effect } from 'effect/Effect'
+import * as React from 'react'
 import { StyleSheet, Text, View } from 'react-native'
-import './global.ts'
 
 export default function App() {
   const [requestAuthorizationResult, setRequestAuthorizationResult] =
