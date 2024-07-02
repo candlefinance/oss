@@ -4,16 +4,18 @@ import {
   accountHistory,
   accounts,
   authorizationStatus,
+  FinancekitError,
   requestAuthorization,
+  S_CNDL_UUID,
   transactionHistory,
   transactions,
-  uuid,
 } from '@candlefinance/financekit'
 import { Effect as E, Option as O, pipe } from 'effect'
 import * as React from 'react'
 
+import type { Effect } from 'effect/Effect'
 import { StyleSheet, Text, View } from 'react-native'
-import './global.js'
+import './global.ts'
 
 export default function App() {
   const [requestAuthorizationResult, setRequestAuthorizationResult] =
@@ -30,109 +32,85 @@ export default function App() {
     React.useState('Loading')
   const [accountBalanceHistoryResult, setAccountBalanceHistoryResult] =
     React.useState('Loading')
-  React.useEffect(() => {
-    pipe(
-      requestAuthorization(),
+  const functionToEffect = async <S, T>(inputs: {
+    funcInput: S
+    func: (input: S) => Effect<T, typeof FinancekitError.Type>
+    onResult: React.Dispatch<React.SetStateAction<string>>
+  }) => {
+    await pipe(
+      inputs.func(inputs.funcInput),
       E.mapBoth({
-        onSuccess: (a) => 'Success:' + a,
+        onSuccess: (a) => 'Success: ' + a,
         onFailure: (e) => 'Failure: ' + e.code,
       }),
       E.merge,
-      E.map((_) => setRequestAuthorizationResult(_)),
+      E.map(inputs.onResult),
       E.runPromise
     )
+  }
+  React.useEffect(() => {
+    functionToEffect({
+      func: requestAuthorization,
+      funcInput: undefined,
+      onResult: setRequestAuthorizationResult,
+    })
   }, [])
   React.useEffect(() => {
-    pipe(
-      authorizationStatus(),
-      E.mapBoth({
-        onSuccess: (a) => 'Success:' + a,
-        onFailure: (e) => 'Failure: ' + e.code,
-      }),
-      E.merge,
-      E.map((_) => setAuthorizationStatusResult(_)),
-      E.runPromise
-    )
+    functionToEffect({
+      func: authorizationStatus,
+      funcInput: undefined,
+      onResult: setAuthorizationStatusResult,
+    })
   }, [])
   React.useEffect(() => {
-    pipe(
-      transactions({ limit: O.none(), offset: O.none() }),
-      E.mapBoth({
-        onSuccess: (a) => 'Success:' + a,
-        onFailure: (e) => 'Failure: ' + e.code,
-      }),
-      E.merge,
-      E.map((_) => setTransactionsResult(_)),
-      E.runPromise
-    )
+    functionToEffect({
+      func: transactions,
+      funcInput: { limit: O.none(), offset: O.none() },
+      onResult: setTransactionsResult,
+    })
   }, [])
   React.useEffect(() => {
-    pipe(
-      transactionHistory({
+    functionToEffect({
+      func: transactionHistory,
+      funcInput: {
         token: O.none(),
         isMonitoring: O.none(),
-        accountId: uuid.make('00000000-0000-0000-0000-000000000000'),
-      }),
-      E.mapBoth({
-        onSuccess: (a) => 'Success:' + a,
-        onFailure: (e) => 'Failure: ' + e.code,
-      }),
-      E.merge,
-      E.map((_) => setTransactionHistoryResult(_)),
-      E.runPromise
-    )
+        accountId: S_CNDL_UUID.make('00000000-0000-0000-0000-000000000000'),
+      },
+      onResult: setTransactionHistoryResult,
+    })
   }, [])
   React.useEffect(() => {
-    pipe(
-      accounts({ limit: O.none(), offset: O.none() }),
-      E.mapBoth({
-        onSuccess: (a) => 'Success:' + a,
-        onFailure: (e) => 'Failure: ' + e.code,
-      }),
-      E.merge,
-      E.map((_) => setAccountsResult(_)),
-      E.runPromise
-    )
+    functionToEffect({
+      func: accounts,
+      funcInput: { limit: O.none(), offset: O.none() },
+      onResult: setAccountsResult,
+    })
   }, [])
   React.useEffect(() => {
-    pipe(
-      accountHistory({ token: O.none(), isMonitoring: O.none() }),
-      E.mapBoth({
-        onSuccess: (a) => 'Success:' + a,
-        onFailure: (e) => 'Failure: ' + e.code,
-      }),
-      E.merge,
-      E.map((_) => setAccountHistoryResult(_)),
-      E.runPromise
-    )
+    functionToEffect({
+      func: accountHistory,
+      funcInput: { token: O.none(), isMonitoring: O.none() },
+      onResult: setAccountHistoryResult,
+    })
   }, [])
   React.useEffect(() => {
-    pipe(
-      accountBalances({ limit: O.none(), offset: O.none() }),
-      E.mapBoth({
-        onSuccess: (a) => 'Success:' + a,
-        onFailure: (e) => 'Failure: ' + e.code,
-      }),
-      E.merge,
-      E.map((_) => setAccountBalancesResult(_)),
-      E.runPromise
-    )
+    functionToEffect({
+      func: accountBalances,
+      funcInput: { limit: O.none(), offset: O.none() },
+      onResult: setAccountBalancesResult,
+    })
   }, [])
   React.useEffect(() => {
-    pipe(
-      accountBalanceHistory({
+    functionToEffect({
+      func: accountBalanceHistory,
+      funcInput: {
         token: O.none(),
         isMonitoring: O.none(),
-        accountId: uuid.make('00000000-0000-0000-0000-000000000000'),
-      }),
-      E.mapBoth({
-        onSuccess: (a) => 'Success:' + a,
-        onFailure: (e) => 'Failure: ' + e.code,
-      }),
-      E.merge,
-      E.map((_) => setAccountBalanceHistoryResult(_)),
-      E.runPromise
-    )
+        accountId: S_CNDL_UUID.make('00000000-0000-0000-0000-000000000000'),
+      },
+      onResult: setAccountBalanceHistoryResult,
+    })
   }, [])
 
   return (
@@ -141,7 +119,7 @@ export default function App() {
       <Text>Authorization Status Result: {authorizationStatusResult}</Text>
       <Text>Transactions Result: {transactionsResult}</Text>
       <Text>Transaction History Result: {transactionHistoryResult}</Text>
-      <Text>accounts Result: {accountsResult}</Text>
+      <Text>Accounts Result: {accountsResult}</Text>
       <Text>Account History Result: {accountHistoryResult}</Text>
       <Text>Account Balances Result: {accountBalancesResult}</Text>
       <Text>Account Balance history Result: {accountBalanceHistoryResult}</Text>

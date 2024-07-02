@@ -1,11 +1,7 @@
 import { Schema as S } from '@effect/schema'
 import { Effect as E, Either, Option as O, flow, pipe } from 'effect'
 import { NativeModules, Platform } from 'react-native'
-import {
-  discriminateA,
-  oLiftRefinement,
-  type Discriminated,
-} from './discrimination_utils'
+import { discriminateA, oLiftRefinement, type Discriminated } from './utils'
 
 const LINKING_ERROR =
   `The package '@candlefinance/financekit' doesn't seem to be linked. Make sure: \n\n` +
@@ -38,12 +34,12 @@ const financekitNativeModule: Record<
 
 const AuthorizationStatus = S.Literal('authorized', 'denied', 'notDetermined')
 
-export const uuid = S.UUID.pipe(S.brand('CNDL_UUID'))
-export const int = S.Int.pipe(S.brand('CNDL_INT'))
+export const S_CNDL_UUID = S.UUID.pipe(S.brand('CNDL_UUID'))
+export const S_CNDL_Int = S.Int.pipe(S.brand('CNDL_Int'))
 
 const Query = S.Struct({
-  limit: S.OptionFromUndefinedOr(int),
-  offset: S.OptionFromUndefinedOr(int),
+  limit: S.OptionFromUndefinedOr(S_CNDL_Int),
+  offset: S.OptionFromUndefinedOr(S_CNDL_Int),
 })
 
 // TODO: Convert to and from S.String to ensure these don't break in the future. Applies to all enums
@@ -86,14 +82,14 @@ const CurrencyAmount = S.Struct({
 })
 
 const Transaction = S.Struct({
-  id: uuid,
-  accountId: uuid,
+  id: S_CNDL_UUID,
+  accountId: S_CNDL_UUID,
   transactionAmount: CurrencyAmount,
   foreignCurrencyAmount: S.OptionFromUndefinedOr(CurrencyAmount),
   creditDebitIndicator: S.Enums(CreditDebitIndicator),
   transactionDescription: S.String,
   originalTransactionDescription: S.String,
-  merchantCategoryCode: S.OptionFromUndefinedOr(int),
+  merchantCategoryCode: S.OptionFromUndefinedOr(S_CNDL_Int),
   merchantName: S.OptionFromUndefinedOr(S.String),
   transactionType: S.Enums(TransactionType),
   status: S.Enums(TransactionStatus),
@@ -110,7 +106,7 @@ const AccountHistoryParams = S.Struct({
 const AccountDetailsHistoryParams = AccountHistoryParams.pipe(
   S.extend(
     S.Struct({
-      accountId: uuid,
+      accountId: S_CNDL_UUID,
     })
   )
 )
@@ -123,7 +119,7 @@ const AccountCreditInformation = S.Struct({
 })
 
 const Account = S.Struct({
-  id: uuid,
+  id: S_CNDL_UUID,
   displayName: S.String,
   accountDescription: S.OptionFromUndefinedOr(S.String),
   institutionName: S.String,
@@ -159,8 +155,8 @@ const CurrentBalance = S.Union(
 )
 
 const AccountBalance = S.Struct({
-  id: uuid,
-  accountID: uuid,
+  id: S_CNDL_UUID,
+  accountID: S_CNDL_UUID,
   currentBalance: CurrentBalance,
 })
 
@@ -169,7 +165,7 @@ export const FinancekitError = S.Struct({
   nativeStackAndroid: S.OptionFromUndefinedOr(
     S.Array(
       S.Struct({
-        lineNumber: int,
+        lineNumber: S_CNDL_Int,
         file: S.String,
         methodName: S.String,
         class: S.String,
@@ -199,13 +195,13 @@ export const FinancekitError = S.Struct({
 })
 
 const makeError = <Code extends String & (typeof FinancekitError.Type)['code']>(
-  error: any,
+  error: unknown,
   code: Code
 ): Discriminated<typeof FinancekitError.Type, 'code', Code> =>
   FinancekitError.make({
     code: code,
     userInfo: O.none(),
-    message: JSON.stringify(error),
+    message: `${error}`,
     nativeStackAndroid: O.none(),
     nativeStackIOS: O.none(),
     domain: O.none(),
@@ -334,12 +330,7 @@ export function transactions(
         catch: (error) =>
           pipe(
             error,
-            (_) => {
-              console.log('Got error: ', JSON.stringify(_))
-              return _
-            },
             S.decodeUnknownEither(FinancekitError),
-            Either.mapLeft((_) => console.log(_)),
             Either.getRight,
             O.flatMap(
               oLiftRefinement(
@@ -352,24 +343,17 @@ export function transactions(
                 ])
               )
             ),
-            O.getOrElse(() => {
-              console.log('Got error: ', JSON.stringify(error))
-              return makeError(
+            O.getOrElse(() =>
+              makeError(
                 error,
                 '@candlefinance.financekit.unknown_error_response_schema'
               )
-            })
+            )
           ),
       })
     ),
     E.flatMap(
       flow(
-        // S.decode(S.Array(S.String.pipe(S.compose(Transaction)))),
-        // S.decode(S.String.pipe(S.compose(S.Array(Transaction)))),
-        (_) => {
-          console.log('Got string: ' + _)
-          return _
-        },
         S.decode(S.parseJson(S.Array(Transaction))),
         E.mapError((error) =>
           makeError(error, '@candlefinance.financekit.unknown_response_schema')
