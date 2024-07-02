@@ -1,9 +1,10 @@
 import FinanceKit
 
-private let CODE_ACCOUNT_BALANCES_INVALID: String = "@candlefinance.financekit.account_balances_invalid"
-private let CODE_ACCOUNT_BALANCE_HISTORY_INVALID: String = "@candlefinance.financekit.account_balance_history_invalid"
-private let CODE_ACCOUNTS_INVALID: String = "@candlefinance.financekit.accounts_invalid"
-private let CODE_PARAMS_INVALID: String = "@candlefinance.financekit.params_invalid"
+private let CODE_ACCOUNT_BALANCES_INVALID = "@candlefinance.financekit.account_balances_invalid"
+private let CODE_ACCOUNT_BALANCE_HISTORY_INVALID = "@candlefinance.financekit.account_balance_history_invalid"
+private let CODE_ACCOUNTS_INVALID = "@candlefinance.financekit.accounts_invalid"
+private let CODE_LOW_OS_VERSION = "@candlefinance.financekit.os_version_too_low"
+private let CODE_PARAMS_INVALID = "@candlefinance.financekit.params_invalid"
 private let CODE_QUERY_INVALID = "@candlefinance.financekit.query_invalid"
 private let CODE_TRANSACTION_HISTORY_INVALID = "@candlefinance.financekit.transaction_history_invalid"
 private let CODE_TRANSACTIONS_INVALID = "@candlefinance.financekit.transactions_invalid"
@@ -12,8 +13,9 @@ private let CODE_UNKNOWN_ACCOUNT_TYPE = "@candlefinance.financekit.unknown_accou
 private let CODE_UNKNOWN_AUTHORIZATION_STATUS = "@candlefinance.financekit.unknown_authorization_status"
 private let CODE_UNKNOWN_CURRENT_BALANCE_TYPE = "@candlefinance.financekit.unknown_current_balance_type"
 
-private let MESSAGE_UNKNOWN_PARAMS_ISSUE: String = "Your request is invalid. Please verify the format of your parameters or file an issue on GitHub."
-private let MESSAGE_UNKNOWN_RESPONSE_ISSUE: String = "Your request received a response, but it couldn't be processed. Please contact Apple or file an issue on GitHub."
+private let MESSAGE_LOW_OS_VERSION = "You are trying to use FinanceKit but your phone's OS is not 17.4.0 or above"
+private let MESSAGE_UNKNOWN_PARAMS_ISSUE = "Your request is invalid. Please verify the format of your parameters or file an issue on GitHub."
+private let MESSAGE_UNKNOWN_RESPONSE_ISSUE = "Your request received a response, but it couldn't be processed. Please contact Apple or file an issue on GitHub."
 private let MESSAGE_UNKNOWN = "Something went wrong. Please file an issue on GitHub or try again."
 private let MESSAGE_UNKNOWN_ACCOUNT_TYPE = "An Account with an unknown type was received from Apple's APIs. Please file an issue on GitHub."
 private let MESSAGE_UNKNOWN_AUTHORIZATION_STATUS = "An AuthorizationStatus with an unknown type was received from Apple's APIs. Please file an issue on Github."
@@ -31,27 +33,22 @@ extension AuthorizationStatus {
             case .notDetermined:
                 return "notDetermined"
             @unknown default:
-                throw FinancekitError.unknownAuthorizationStatus
+                throw UnknownAuthorizationStatusError()
             }
         }
     }
 }
 
-enum FinancekitError: Error {
-    case unknownAccountType
-    case unknownAuthorizationStatus
-    case unknownCurrentBalanceType
-    var message : String {
-        switch self {
-            
-        case .unknownAuthorizationStatus:
-            return MESSAGE_UNKNOWN_AUTHORIZATION_STATUS
-        case .unknownAccountType:
-            return MESSAGE_UNKNOWN_ACCOUNT_TYPE
-        case .unknownCurrentBalanceType:
-            return MESSAGE_UNKNOWN_CURRENT_BALANCE_TYPE
-        }
-    }
+class UnknownAuthorizationStatusError : Error {
+    let message : String = MESSAGE_UNKNOWN_AUTHORIZATION_STATUS
+}
+
+class UnknownAccountTypeError : Error {
+    let message : String = MESSAGE_UNKNOWN_ACCOUNT_TYPE
+}
+
+class UnknownCurrentBalanceTypeError : Error {
+    let message : String = MESSAGE_UNKNOWN_CURRENT_BALANCE_TYPE
 }
 
 struct FinanceKitQuery : Codable {
@@ -99,7 +96,7 @@ struct FinanceKitAccount : Encodable, Identifiable {
             self._tag = "liability"
             self.creditInformation = liabilityAccount.creditInformation
         @unknown default:
-            throw FinancekitError.unknownAccountType
+            throw UnknownAccountTypeError()
         }
         
         self.id = account.id
@@ -137,34 +134,30 @@ struct FinanceKitCurrentBalance : Encodable {
             self.available = available
             self.booked = booked
         @unknown default:
-            throw FinancekitError.unknownCurrentBalanceType
+            throw UnknownCurrentBalanceTypeError()
         }
     }
 }
 
-@available(iOS 17.4, *)
 @objc(Financekit)
-final class Financekit: NSObject {
+class Financekit: NSObject {
     
-    private let store = FinanceStore.shared
     private let jsonEncoder = JSONEncoder()
     override init() {
         jsonEncoder.dateEncodingStrategy = .iso8601
     }
-    
+
     @objc(requestAuthorization:withRejecter:)
     func requestAuthorization(resolve: @escaping RCTPromiseResolveBlock, reject: @escaping RCTPromiseRejectBlock) {
+        guard #available(iOS 17.4, *) else {
+            return reject(CODE_LOW_OS_VERSION, MESSAGE_LOW_OS_VERSION, nil)
+        }
         Task {
             do {
-                let status = try await store.requestAuthorization()
+                let status = try await FinanceStore.shared.requestAuthorization()
                 resolve(try status.authorizationStatus)
-            } catch let error as FinancekitError {
-                switch error {
-                case .unknownAuthorizationStatus:
-                    reject(CODE_UNKNOWN_AUTHORIZATION_STATUS, error.message, error)
-                default:
-                    reject(CODE_UNKNOWN, error.message, error)
-                }
+            } catch let error as UnknownAuthorizationStatusError {
+                reject(CODE_UNKNOWN_AUTHORIZATION_STATUS, error.message, error)
             } catch let error {
                 reject(CODE_UNKNOWN, MESSAGE_UNKNOWN, error)
             }
@@ -173,25 +166,26 @@ final class Financekit: NSObject {
     
     @objc(authorizationStatus:withRejecter:)
     func authorizationStatus(resolve: @escaping RCTPromiseResolveBlock, reject: @escaping RCTPromiseRejectBlock) {
+        guard #available(iOS 17.4, *) else {
+            return reject(CODE_LOW_OS_VERSION, MESSAGE_LOW_OS_VERSION, nil)
+        }
         Task {
             do {
-                let status = try await store.authorizationStatus()
+                let status = try await FinanceStore.shared.authorizationStatus()
                 resolve(try status.authorizationStatus)
-            } catch let error as FinancekitError {
-                switch error {
-                case .unknownAuthorizationStatus:
-                    reject(CODE_UNKNOWN_AUTHORIZATION_STATUS, error.message, error)
-                default:
-                    reject(CODE_UNKNOWN, error.message, error)
-                }
+            } catch let error as UnknownAuthorizationStatusError {
+                reject(CODE_UNKNOWN_AUTHORIZATION_STATUS, error.message, error)
             } catch let error {
                 reject(CODE_UNKNOWN, MESSAGE_UNKNOWN, error)
             }
         }
     }
     
-    @objc(transactions:withResolve:withRejecter:)
+    @objc(transactions:withResolver:withRejecter:)
     func transactions(stringifiedQuery: String, resolve: @escaping RCTPromiseResolveBlock, reject: @escaping RCTPromiseRejectBlock) {
+        guard #available(iOS 17.4, *) else {
+            return reject(CODE_LOW_OS_VERSION, MESSAGE_LOW_OS_VERSION, nil)
+        }
         Task {
             do {
                 guard let queryData = stringifiedQuery.data(using: .utf8) else {
@@ -200,7 +194,7 @@ final class Financekit: NSObject {
                 let queryObject = try JSONDecoder().decode(FinanceKitQuery.self, from: queryData)
                 let query = TransactionQuery(sortDescriptors: [], predicate: nil, limit: queryObject.limit, offset: queryObject.offset)
                 
-                let transactions = try await store.transactions(query: query)
+                let transactions = try await FinanceStore.shared.transactions(query: query)
                 let data = try jsonEncoder.encode(transactions)
                 guard let stringifiedResponse = String(data: data, encoding: .utf8) else {
                     return reject(CODE_TRANSACTIONS_INVALID, MESSAGE_UNKNOWN_RESPONSE_ISSUE, nil)
@@ -214,13 +208,16 @@ final class Financekit: NSObject {
     
     @objc(transactionHistory:withResolver:withRejecter:)
     func transactionHistory(stringifiedParams: String, resolve: @escaping RCTPromiseResolveBlock, reject: @escaping RCTPromiseRejectBlock) {
+        guard #available(iOS 17.4, *) else {
+            return reject(CODE_LOW_OS_VERSION, MESSAGE_LOW_OS_VERSION, nil)
+        }
         Task {
             do {
                 guard let paramsData: Data = stringifiedParams.data(using: .utf8) else {
                     return reject(CODE_PARAMS_INVALID, MESSAGE_UNKNOWN_PARAMS_ISSUE, nil)
                 }
                 let params = try JSONDecoder().decode(AccountDetailsHistoryParams.self, from: paramsData)
-                let transactionHistory = store.transactionHistory(forAccountID: params.accountId, since: params.token, isMonitoring: params.isMonitoring ?? true)
+                let transactionHistory = FinanceStore.shared.transactionHistory(forAccountID: params.accountId, since: params.token, isMonitoring: params.isMonitoring ?? true)
                 let transactionList = try await transactionHistory.reduce([]) { partialResult, element in
                     partialResult + [FinanceKitChanges(inserted: element.inserted, updated: element.updated, deleted: element.deleted, newToken: element.newToken)]
                 }
@@ -236,8 +233,11 @@ final class Financekit: NSObject {
         }
     }
     
-    @objc(account:withResolve:withRejecter:)
-    func account(stringifiedQuery: String, resolve: @escaping RCTPromiseResolveBlock, reject: @escaping RCTPromiseRejectBlock) {
+    @objc(accounts:withResolver:withRejecter:)
+    func accounts(stringifiedQuery: String, resolve: @escaping RCTPromiseResolveBlock, reject: @escaping RCTPromiseRejectBlock) {
+        guard #available(iOS 17.4, *) else {
+            return reject(CODE_LOW_OS_VERSION, MESSAGE_LOW_OS_VERSION, nil)
+        }
         Task {
             do {
                 guard let queryData: Data = stringifiedQuery.data(using: .utf8) else {
@@ -246,7 +246,7 @@ final class Financekit: NSObject {
                 let queryObject = try JSONDecoder().decode(FinanceKitQuery.self, from: queryData)
                 let query = AccountQuery(sortDescriptors: [], predicate: nil, limit: queryObject.limit, offset: queryObject.offset)
                 
-                let accounts = try await store.accounts(query: query)
+                let accounts = try await FinanceStore.shared.accounts(query: query)
                 let financekitAccounts = try accounts.map { account in
                     return try FinanceKitAccount(account: account)
                 }
@@ -256,13 +256,8 @@ final class Financekit: NSObject {
                     return reject(CODE_ACCOUNTS_INVALID, MESSAGE_UNKNOWN_RESPONSE_ISSUE, nil)
                 }
                 resolve(stringifiedResponse)
-            } catch let error as FinancekitError {
-                switch error {
-                case .unknownAccountType:
-                    reject(CODE_UNKNOWN_ACCOUNT_TYPE, error.message, error)
-                default:
-                    reject(CODE_UNKNOWN, error.message, error)
-                }
+            } catch let error as UnknownAccountTypeError {
+                reject(CODE_UNKNOWN_ACCOUNT_TYPE, error.message, error)
             } catch let error {
                 reject(CODE_UNKNOWN, MESSAGE_UNKNOWN, error)
             }
@@ -271,13 +266,16 @@ final class Financekit: NSObject {
     
     @objc(accountHistory:withResolver:withRejecter:)
     func accountHistory(stringifiedParams: String, resolve: @escaping RCTPromiseResolveBlock, reject: @escaping RCTPromiseRejectBlock) {
+        guard #available(iOS 17.4, *) else {
+            return reject(CODE_LOW_OS_VERSION, MESSAGE_LOW_OS_VERSION, nil)
+        }
         Task {
             do {
                 guard let paramsData: Data = stringifiedParams.data(using: .utf8) else {
                     return reject(CODE_PARAMS_INVALID, MESSAGE_UNKNOWN_PARAMS_ISSUE, nil)
                 }
                 let params = try JSONDecoder().decode(AccountHistoryParams.self, from: paramsData)
-                let accountHistory = store.accountHistory(since: params.token, isMonitoring: params.isMonitoring ?? true)
+                let accountHistory = FinanceStore.shared.accountHistory(since: params.token, isMonitoring: params.isMonitoring ?? true)
                 let accountList = try await accountHistory.reduce([]) { partialResult, element in
                     partialResult + [
                         FinanceKitChanges(
@@ -292,21 +290,19 @@ final class Financekit: NSObject {
                     return reject(CODE_TRANSACTION_HISTORY_INVALID, MESSAGE_UNKNOWN_RESPONSE_ISSUE, nil)
                 }
                 resolve(stringifiedTransactionList)
-            } catch let error as FinancekitError {
-                switch error {
-                case .unknownAccountType:
-                    reject(CODE_UNKNOWN_ACCOUNT_TYPE, error.message, error)
-                default:
-                    reject(CODE_UNKNOWN, error.message, error)
-                }
+            } catch let error as UnknownAccountTypeError {
+                reject(CODE_UNKNOWN_ACCOUNT_TYPE, error.message, error)
             } catch let error {
                 reject(CODE_UNKNOWN, MESSAGE_UNKNOWN, error)
             }
         }
     }
     
-    @objc(accountBalances:withResolve:withRejecter:)
+    @objc(accountBalances:withResolver:withRejecter:)
     func accountBalances(stringifiedQuery: String, resolve: @escaping RCTPromiseResolveBlock, reject: @escaping RCTPromiseRejectBlock) {
+        guard #available(iOS 17.4, *) else {
+            return reject(CODE_LOW_OS_VERSION, MESSAGE_LOW_OS_VERSION, nil)
+        }
         Task {
             do {
                 guard let queryData: Data = stringifiedQuery.data(using: .utf8) else {
@@ -314,24 +310,19 @@ final class Financekit: NSObject {
                 }
                 let queryObject = try JSONDecoder().decode(FinanceKitQuery.self, from: queryData)
                 let query = AccountBalanceQuery(sortDescriptors: [], predicate: nil, limit: queryObject.limit, offset: queryObject.offset)
-                let balances = try await store.accountBalances(query: query)
+                let balances = try await FinanceStore.shared.accountBalances(query: query)
                 let financekitBalances = try balances.map { accountBalance in
                     let currentBalance = try FinanceKitCurrentBalance(currentBalance: accountBalance.currentBalance)
                     return FinanceKitAccountBalance(id: accountBalance.id, accountID: accountBalance.accountID, currentBalance: currentBalance)
                 }
                 
-                let data = try jsonEncoder.encode(balances)
+                let data = try jsonEncoder.encode(financekitBalances)
                 guard let stringifiedResponse = String(data: data, encoding: .utf8) else {
                     return reject(CODE_ACCOUNT_BALANCES_INVALID, MESSAGE_UNKNOWN_RESPONSE_ISSUE, nil)
                 }
                 resolve(stringifiedResponse)
-            } catch let error as FinancekitError {
-                switch error {
-                case .unknownCurrentBalanceType:
-                    reject(CODE_UNKNOWN_CURRENT_BALANCE_TYPE, error.message, error)
-                default:
-                    reject(CODE_UNKNOWN, error.message, error)
-                }
+            } catch let error as UnknownCurrentBalanceTypeError {
+                reject(CODE_UNKNOWN_CURRENT_BALANCE_TYPE, error.message, error)
             } catch let error {
                 reject(CODE_UNKNOWN, MESSAGE_UNKNOWN, error)
             }
@@ -340,13 +331,16 @@ final class Financekit: NSObject {
     
     @objc(accountBalanceHistory:withResolver:withRejecter:)
     func accountBalanceHistory(stringifiedParams: String, resolve: @escaping RCTPromiseResolveBlock, reject: @escaping RCTPromiseRejectBlock) {
+        guard #available(iOS 17.4, *) else {
+            return reject(CODE_LOW_OS_VERSION, MESSAGE_LOW_OS_VERSION, nil)
+        }
         Task {
             do {
                 guard let paramsData: Data = stringifiedParams.data(using: .utf8) else {
                     return reject(CODE_PARAMS_INVALID, MESSAGE_UNKNOWN_PARAMS_ISSUE, nil)
                 }
                 let params = try JSONDecoder().decode(AccountDetailsHistoryParams.self, from: paramsData)
-                let accountBalanceHistory = store.accountBalanceHistory(forAccountID: params.accountId, since: params.token, isMonitoring: params.isMonitoring ?? true)
+                let accountBalanceHistory = FinanceStore.shared.accountBalanceHistory(forAccountID: params.accountId, since: params.token, isMonitoring: params.isMonitoring ?? true)
                 let accountBalanceList = try await accountBalanceHistory.reduce([]) { partialResult, element in
                     partialResult + [
                         FinanceKitChanges(
@@ -361,16 +355,10 @@ final class Financekit: NSObject {
                 let data = try jsonEncoder.encode(accountBalanceList)
                 guard let stringifiedAccountBalanceList = String(data: data, encoding: .utf8) else {
                     return reject(CODE_ACCOUNT_BALANCE_HISTORY_INVALID, MESSAGE_UNKNOWN_RESPONSE_ISSUE, nil)
-                    return reject(CODE_ACCOUNT_BALANCE_HISTORY_INVALID, MESSAGE_UNKNOWN_RESPONSE_ISSUE, nil)
                 }
                 resolve(stringifiedAccountBalanceList)
-            } catch let error as FinancekitError {
-                switch error {
-                case .unknownCurrentBalanceType:
-                    reject(CODE_UNKNOWN_CURRENT_BALANCE_TYPE, error.message, error)
-                default:
-                    reject(CODE_UNKNOWN, error.message, error)
-                }
+            } catch let error as UnknownCurrentBalanceTypeError {
+                reject(CODE_UNKNOWN_CURRENT_BALANCE_TYPE, error.message, error)
             } catch let error {
                 reject(CODE_UNKNOWN, MESSAGE_UNKNOWN, error)
             }

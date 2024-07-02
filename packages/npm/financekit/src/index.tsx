@@ -1,6 +1,7 @@
-import { NativeModules, Platform } from 'react-native'
 import { Schema as S } from '@effect/schema'
-import { pipe } from 'effect'
+import { Effect as E, Either, Option as O, flow, pipe } from 'effect'
+import { NativeModules, Platform } from 'react-native'
+import { discriminateA, oLiftRefinement, type Discriminated } from './utils'
 
 const LINKING_ERROR =
   `The package '@candlefinance/financekit' doesn't seem to be linked. Make sure: \n\n` +
@@ -8,7 +9,19 @@ const LINKING_ERROR =
   '- You rebuilt the app after installing the package\n' +
   '- You are not using Expo Go\n'
 
-const Financekit = NativeModules.Financekit
+const financekitNativeModule: Record<
+  'requestAuthorization' | 'authorizationStatus',
+  () => Promise<string>
+> &
+  Record<
+    | 'transactions'
+    | 'transactionHistory'
+    | 'accounts'
+    | 'accountHistory'
+    | 'accountBalances'
+    | 'accountBalanceHistory',
+    (stringParam: string) => Promise<string>
+  > = NativeModules.Financekit
   ? NativeModules.Financekit
   : new Proxy(
       {},
@@ -21,9 +34,12 @@ const Financekit = NativeModules.Financekit
 
 const AuthorizationStatus = S.Literal('authorized', 'denied', 'notDetermined')
 
+export const S_CNDL_UUID = S.UUID.pipe(S.brand('CNDL_UUID'))
+export const S_CNDL_Int = S.Int.pipe(S.brand('CNDL_Int'))
+
 const Query = S.Struct({
-  limit: S.optional(S.Int),
-  offset: S.optional(S.Int),
+  limit: S.OptionFromUndefinedOr(S_CNDL_Int),
+  offset: S.OptionFromUndefinedOr(S_CNDL_Int),
 })
 
 // TODO: Convert to and from S.String to ensure these don't break in the future. Applies to all enums
@@ -66,45 +82,46 @@ const CurrencyAmount = S.Struct({
 })
 
 const Transaction = S.Struct({
-  id: S.UUID,
-  accountId: S.UUID,
+  id: S_CNDL_UUID,
+  accountId: S_CNDL_UUID,
   transactionAmount: CurrencyAmount,
-  foreignCurrencyAmount: S.optional(CurrencyAmount),
+  foreignCurrencyAmount: S.OptionFromUndefinedOr(CurrencyAmount),
   creditDebitIndicator: S.Enums(CreditDebitIndicator),
   transactionDescription: S.String,
   originalTransactionDescription: S.String,
-  merchantCategoryCode: S.optional(S.Int),
-  merchantName: S.optional(S.String),
+  merchantCategoryCode: S.OptionFromUndefinedOr(S_CNDL_Int),
+  merchantName: S.OptionFromUndefinedOr(S.String),
   transactionType: S.Enums(TransactionType),
   status: S.Enums(TransactionStatus),
+  // FIXME: Replace with Luxon DateTime
   transactionDate: S.DateFromString,
-  postedDate: S.optional(S.DateFromString),
+  postedDate: S.OptionFromUndefinedOr(S.DateFromString),
 })
 
 const AccountHistoryParams = S.Struct({
-  token: S.optional(S.String),
-  isMonitoring: S.optional(S.Boolean),
+  token: S.OptionFromUndefinedOr(S.String),
+  isMonitoring: S.OptionFromUndefinedOr(S.Boolean),
 })
 
 const AccountDetailsHistoryParams = AccountHistoryParams.pipe(
   S.extend(
     S.Struct({
-      accountId: S.UUID,
+      accountId: S_CNDL_UUID,
     })
   )
 )
 
 const AccountCreditInformation = S.Struct({
-  creditLimit: S.optional(CurrencyAmount),
-  nextPaymentDueDate: S.optional(S.DateFromString),
-  minimumNextPaymentAmount: S.optional(CurrencyAmount),
-  overduePaymentAmount: S.optional(CurrencyAmount),
+  creditLimit: S.OptionFromUndefinedOr(CurrencyAmount),
+  nextPaymentDueDate: S.OptionFromUndefinedOr(S.DateFromString),
+  minimumNextPaymentAmount: S.OptionFromUndefinedOr(CurrencyAmount),
+  overduePaymentAmount: S.OptionFromUndefinedOr(CurrencyAmount),
 })
 
 const Account = S.Struct({
-  id: S.UUID,
+  id: S_CNDL_UUID,
   displayName: S.String,
-  accountDescription: S.optional(S.String),
+  accountDescription: S.OptionFromUndefinedOr(S.String),
   institutionName: S.String,
   currencyCode: S.String,
 }).pipe(
@@ -138,104 +155,519 @@ const CurrentBalance = S.Union(
 )
 
 const AccountBalance = S.Struct({
-  id: S.UUID,
-  accountID: S.UUID,
+  id: S_CNDL_UUID,
+  accountID: S_CNDL_UUID,
   currentBalance: CurrentBalance,
 })
 
-export async function requestAuthorization(): Promise<
-  typeof AuthorizationStatus.Type
+export const FinancekitError = S.Struct({
+  userInfo: S.OptionFromNullOr(S.Any),
+  nativeStackAndroid: S.OptionFromUndefinedOr(
+    S.Array(
+      S.Struct({
+        lineNumber: S_CNDL_Int,
+        file: S.String,
+        methodName: S.String,
+        class: S.String,
+      })
+    )
+  ),
+  nativeStackIOS: S.OptionFromUndefinedOr(S.Array(S.String)),
+  domain: S.OptionFromUndefinedOr(S.String),
+  message: S.String,
+  code: S.Literal(
+    '@candlefinance.financekit.account_balances_invalid',
+    '@candlefinance.financekit.account_balance_history_invalid',
+    '@candlefinance.financekit.accounts_invalid',
+    '@candlefinance.financekit.os_version_too_low',
+    '@candlefinance.financekit.params_invalid',
+    '@candlefinance.financekit.query_invalid',
+    '@candlefinance.financekit.transaction_history_invalid',
+    '@candlefinance.financekit.transactions_invalid',
+    '@candlefinance.financekit.unknown',
+    '@candlefinance.financekit.unknown_account_type',
+    '@candlefinance.financekit.unknown_authorization_status',
+    '@candlefinance.financekit.unknown_current_balance_type',
+    '@candlefinance.financekit.unknown_error_response_schema',
+    '@candlefinance.financekit.unknown_response_schema',
+    '@candlefinance.financekit.android_not_supported'
+  ),
+})
+
+const makeError = <Code extends String & (typeof FinancekitError.Type)['code']>(
+  error: unknown,
+  code: Code
+): Discriminated<typeof FinancekitError.Type, 'code', Code> =>
+  FinancekitError.make({
+    code: code,
+    userInfo: O.none(),
+    message: `${error}`,
+    nativeStackAndroid: O.none(),
+    nativeStackIOS: O.none(),
+    domain: O.none(),
+  }) as Discriminated<typeof FinancekitError.Type, 'code', Code>
+
+export function requestAuthorization(): E.Effect<
+  typeof AuthorizationStatus.Type,
+  Discriminated<
+    typeof FinancekitError.Type,
+    'code',
+    | '@candlefinance.financekit.os_version_too_low'
+    | '@candlefinance.financekit.unknown'
+    | '@candlefinance.financekit.unknown_authorization_status'
+    | '@candlefinance.financekit.unknown_error_response_schema'
+    | '@candlefinance.financekit.unknown_response_schema'
+  >
 > {
   return pipe(
-    await Financekit.requestAuthorization(),
-    S.decodeSync(S.parseJson(AuthorizationStatus))
+    E.tryPromise({
+      try: financekitNativeModule.requestAuthorization,
+      catch: (error) =>
+        pipe(
+          error,
+          S.decodeUnknownOption(FinancekitError),
+          O.flatMap(
+            oLiftRefinement(
+              discriminateA('code', [
+                '@candlefinance.financekit.os_version_too_low',
+                '@candlefinance.financekit.unknown',
+                '@candlefinance.financekit.unknown_authorization_status',
+              ])
+            )
+          ),
+          O.getOrElse(() =>
+            makeError(
+              error,
+              '@candlefinance.financekit.unknown_error_response_schema'
+            )
+          )
+        ),
+    }),
+    E.flatMap(
+      flow(
+        S.decode(S.String.pipe(S.compose(AuthorizationStatus))),
+        E.mapError((error) =>
+          makeError(error, '@candlefinance.financekit.unknown_response_schema')
+        )
+      )
+    )
   )
 }
 
-export async function authorizationStatus(): Promise<
-  typeof AuthorizationStatus.Type
+export function authorizationStatus(): E.Effect<
+  typeof AuthorizationStatus.Type,
+  Discriminated<
+    typeof FinancekitError.Type,
+    'code',
+    | '@candlefinance.financekit.os_version_too_low'
+    | '@candlefinance.financekit.unknown_authorization_status'
+    | '@candlefinance.financekit.unknown'
+    | '@candlefinance.financekit.unknown_error_response_schema'
+    | '@candlefinance.financekit.unknown_response_schema'
+  >
 > {
   return pipe(
-    await Financekit.authorizationStatus(),
-    S.decodeSync(S.parseJson(AuthorizationStatus))
+    E.tryPromise({
+      try: financekitNativeModule.authorizationStatus,
+      catch: (error) =>
+        pipe(
+          error,
+          S.decodeUnknownOption(FinancekitError),
+          O.flatMap(
+            oLiftRefinement(
+              discriminateA('code', [
+                '@candlefinance.financekit.unknown_authorization_status',
+                '@candlefinance.financekit.os_version_too_low',
+                '@candlefinance.financekit.unknown',
+              ])
+            )
+          ),
+          O.getOrElse(() =>
+            makeError(
+              error,
+              '@candlefinance.financekit.unknown_error_response_schema'
+            )
+          )
+        ),
+    }),
+    E.flatMap(
+      flow(
+        S.decode(S.String.pipe(S.compose(AuthorizationStatus))),
+        E.mapError((error) =>
+          makeError(error, '@candlefinance.financekit.unknown_response_schema')
+        )
+      )
+    )
   )
 }
 
 // NOTE: The React Native bridge stringifies all objects anyway; we just do it manually so we can take advantage of Swift.Codable and kotlinx.serialization to simplify the native code
-
-export async function transactions(
+export function transactions(
   query: typeof Query.Type
-): Promise<readonly (typeof Transaction.Type)[]> {
-  const stringifiedQuery = pipe(query, S.encodeSync(S.parseJson(Query)))
-  const stringifiedTransactions =
-    await Financekit.transactions(stringifiedQuery)
+): E.Effect<
+  readonly (typeof Transaction.Type)[],
+  Discriminated<
+    typeof FinancekitError.Type,
+    'code',
+    | '@candlefinance.financekit.query_invalid'
+    | '@candlefinance.financekit.os_version_too_low'
+    | '@candlefinance.financekit.unknown'
+    | '@candlefinance.financekit.unknown_error_response_schema'
+    | '@candlefinance.financekit.unknown_response_schema'
+    | '@candlefinance.financekit.transactions_invalid'
+    | '@candlefinance.financekit.android_not_supported'
+  >
+> {
   return pipe(
-    stringifiedTransactions,
-    S.decodeSync(S.parseJson(S.Array(Transaction)))
+    query,
+    S.encode(S.parseJson(Query)),
+    E.mapError((error) =>
+      makeError(error, '@candlefinance.financekit.query_invalid')
+    ),
+    E.flatMap((stringifiedQuery) =>
+      E.tryPromise({
+        try: () => financekitNativeModule.transactions(stringifiedQuery),
+        catch: (error) =>
+          pipe(
+            error,
+            S.decodeUnknownEither(FinancekitError),
+            Either.getRight,
+            O.flatMap(
+              oLiftRefinement(
+                discriminateA('code', [
+                  '@candlefinance.financekit.android_not_supported',
+                  '@candlefinance.financekit.os_version_too_low',
+                  '@candlefinance.financekit.query_invalid',
+                  '@candlefinance.financekit.unknown',
+                  '@candlefinance.financekit.transactions_invalid',
+                ])
+              )
+            ),
+            O.getOrElse(() =>
+              makeError(
+                error,
+                '@candlefinance.financekit.unknown_error_response_schema'
+              )
+            )
+          ),
+      })
+    ),
+    E.flatMap(
+      flow(
+        S.decode(S.parseJson(S.Array(Transaction))),
+        E.mapError((error) =>
+          makeError(error, '@candlefinance.financekit.unknown_response_schema')
+        )
+      )
+    )
   )
 }
 
-export async function transactionHistory(
+export function transactionHistory(
   params: typeof AccountDetailsHistoryParams.Type
-): Promise<readonly (typeof Transaction.Type)[]> {
-  const stringifiedParams = pipe(
-    params,
-    S.encodeSync(S.parseJson(AccountDetailsHistoryParams))
-  )
-  const stringifiedTransactionHistory =
-    await Financekit.transactionHistory(stringifiedParams)
+): E.Effect<
+  readonly (typeof Transaction.Type)[],
+  Discriminated<
+    typeof FinancekitError.Type,
+    'code',
+    | '@candlefinance.financekit.params_invalid'
+    | '@candlefinance.financekit.os_version_too_low'
+    | '@candlefinance.financekit.unknown'
+    | '@candlefinance.financekit.unknown_error_response_schema'
+    | '@candlefinance.financekit.unknown_response_schema'
+    | '@candlefinance.financekit.transaction_history_invalid'
+    | '@candlefinance.financekit.android_not_supported'
+  >
+> {
   return pipe(
-    stringifiedTransactionHistory,
-    S.decodeSync(S.parseJson(S.Array(Transaction)))
+    params,
+    S.encode(S.parseJson(AccountDetailsHistoryParams)),
+    E.mapError((error) =>
+      makeError(error, '@candlefinance.financekit.params_invalid')
+    ),
+    E.flatMap((stringifiedParams) =>
+      E.tryPromise({
+        try: () => financekitNativeModule.transactionHistory(stringifiedParams),
+        catch: (error) =>
+          pipe(
+            error,
+            S.decodeUnknownOption(FinancekitError),
+            O.flatMap(
+              oLiftRefinement(
+                discriminateA('code', [
+                  '@candlefinance.financekit.android_not_supported',
+                  '@candlefinance.financekit.os_version_too_low',
+                  '@candlefinance.financekit.params_invalid',
+                  '@candlefinance.financekit.transaction_history_invalid',
+                  '@candlefinance.financekit.unknown',
+                ])
+              )
+            ),
+            O.getOrElse(() =>
+              makeError(
+                error,
+                '@candlefinance.financekit.unknown_error_response_schema'
+              )
+            )
+          ),
+      })
+    ),
+    E.flatMap(
+      flow(
+        S.decode(S.parseJson(S.Array(Transaction))),
+        E.mapError((error) =>
+          makeError(error, '@candlefinance.financekit.unknown_response_schema')
+        )
+      )
+    )
   )
 }
 
-export async function accounts(
+export function accounts(
   query: typeof Query.Type
-): Promise<readonly (typeof Account.Type)[]> {
-  const stringifiedQuery = pipe(query, S.encodeSync(S.parseJson(Query)))
-  const stringifiedAccounts = await Financekit.accounts(stringifiedQuery)
-  return pipe(stringifiedAccounts, S.decodeSync(S.parseJson(S.Array(Account))))
+): E.Effect<
+  readonly (typeof Account.Type)[],
+  Discriminated<
+    typeof FinancekitError.Type,
+    'code',
+    | '@candlefinance.financekit.query_invalid'
+    | '@candlefinance.financekit.os_version_too_low'
+    | '@candlefinance.financekit.unknown'
+    | '@candlefinance.financekit.unknown_error_response_schema'
+    | '@candlefinance.financekit.unknown_response_schema'
+    | '@candlefinance.financekit.unknown_account_type'
+    | '@candlefinance.financekit.accounts_invalid'
+    | '@candlefinance.financekit.android_not_supported'
+  >
+> {
+  return pipe(
+    query,
+    S.encode(S.parseJson(Query)),
+    E.mapError((error) =>
+      makeError(error, '@candlefinance.financekit.query_invalid')
+    ),
+    E.flatMap((stringifiedQuery) =>
+      E.tryPromise({
+        try: () => financekitNativeModule.accounts(stringifiedQuery),
+        catch: (error) =>
+          pipe(
+            error,
+            S.decodeUnknownOption(FinancekitError),
+            O.flatMap(
+              oLiftRefinement(
+                discriminateA('code', [
+                  '@candlefinance.financekit.android_not_supported',
+                  '@candlefinance.financekit.os_version_too_low',
+                  '@candlefinance.financekit.query_invalid',
+                  '@candlefinance.financekit.accounts_invalid',
+                  '@candlefinance.financekit.unknown_account_type',
+                  '@candlefinance.financekit.unknown',
+                ])
+              )
+            ),
+            O.getOrElse(() =>
+              makeError(
+                error,
+                '@candlefinance.financekit.unknown_error_response_schema'
+              )
+            )
+          ),
+      })
+    ),
+    E.flatMap(
+      flow(
+        S.decode(S.parseJson(S.Array(Account))),
+        E.mapError((error) =>
+          makeError(error, '@candlefinance.financekit.unknown_response_schema')
+        )
+      )
+    )
+  )
 }
 
-export async function accountHistory(
+export function accountHistory(
   params: typeof AccountHistoryParams.Type
-): Promise<readonly (typeof Account.Type)[]> {
-  const stringifiedParams = pipe(
-    params,
-    S.encodeSync(S.parseJson(AccountHistoryParams))
-  )
-  const stringifiedAccountHistory =
-    await Financekit.accountHistory(stringifiedParams)
+): E.Effect<
+  readonly (typeof Account.Type)[],
+  Discriminated<
+    typeof FinancekitError.Type,
+    'code',
+    | '@candlefinance.financekit.params_invalid'
+    | '@candlefinance.financekit.os_version_too_low'
+    | '@candlefinance.financekit.unknown'
+    | '@candlefinance.financekit.unknown_error_response_schema'
+    | '@candlefinance.financekit.unknown_response_schema'
+    | '@candlefinance.financekit.transaction_history_invalid'
+    | '@candlefinance.financekit.unknown_account_type'
+    | '@candlefinance.financekit.android_not_supported'
+  >
+> {
   return pipe(
-    stringifiedAccountHistory,
-    S.decodeSync(S.parseJson(S.Array(Account)))
+    params,
+    S.encode(S.parseJson(AccountHistoryParams)),
+    E.mapError((error) =>
+      makeError(error, '@candlefinance.financekit.params_invalid')
+    ),
+    E.flatMap((stringifiedParams) =>
+      E.tryPromise({
+        try: () => financekitNativeModule.accountHistory(stringifiedParams),
+        catch: (error) =>
+          pipe(
+            error,
+            S.decodeUnknownOption(FinancekitError),
+            O.flatMap(
+              oLiftRefinement(
+                discriminateA('code', [
+                  '@candlefinance.financekit.android_not_supported',
+                  '@candlefinance.financekit.os_version_too_low',
+                  '@candlefinance.financekit.params_invalid',
+                  '@candlefinance.financekit.transaction_history_invalid',
+                  '@candlefinance.financekit.unknown_account_type',
+                  '@candlefinance.financekit.unknown',
+                ])
+              )
+            ),
+            O.getOrElse(() =>
+              makeError(
+                error,
+                '@candlefinance.financekit.unknown_error_response_schema'
+              )
+            )
+          ),
+      })
+    ),
+    E.flatMap(
+      flow(
+        S.decode(S.parseJson(S.Array(Account))),
+        E.mapError((error) =>
+          makeError(error, '@candlefinance.financekit.unknown_response_schema')
+        )
+      )
+    )
   )
 }
 
-export async function accountBalances(
+export function accountBalances(
   query: typeof Query.Type
-): Promise<readonly (typeof AccountBalance.Type)[]> {
-  const stringifiedQuery = pipe(query, S.encodeSync(S.parseJson(Query)))
-  const stringifiedAccountBalances =
-    await Financekit.accountBalances(stringifiedQuery)
+): E.Effect<
+  readonly (typeof AccountBalance.Type)[],
+  Discriminated<
+    typeof FinancekitError.Type,
+    'code',
+    | '@candlefinance.financekit.os_version_too_low'
+    | '@candlefinance.financekit.query_invalid'
+    | '@candlefinance.financekit.unknown'
+    | '@candlefinance.financekit.unknown_error_response_schema'
+    | '@candlefinance.financekit.unknown_response_schema'
+    | '@candlefinance.financekit.account_balances_invalid'
+    | '@candlefinance.financekit.unknown_current_balance_type'
+    | '@candlefinance.financekit.android_not_supported'
+  >
+> {
   return pipe(
-    stringifiedAccountBalances,
-    S.decodeSync(S.parseJson(S.Array(AccountBalance)))
+    query,
+    S.encode(S.parseJson(Query)),
+    E.mapError((error) =>
+      makeError(error, '@candlefinance.financekit.query_invalid')
+    ),
+    E.flatMap((stringifiedQuery) =>
+      E.tryPromise({
+        try: () => financekitNativeModule.accountBalances(stringifiedQuery),
+        catch: (error) =>
+          pipe(
+            error,
+            S.decodeUnknownOption(FinancekitError),
+            O.flatMap(
+              oLiftRefinement(
+                discriminateA('code', [
+                  '@candlefinance.financekit.android_not_supported',
+                  '@candlefinance.financekit.os_version_too_low',
+                  '@candlefinance.financekit.query_invalid',
+                  '@candlefinance.financekit.account_balances_invalid',
+                  '@candlefinance.financekit.unknown_current_balance_type',
+                  '@candlefinance.financekit.unknown',
+                ])
+              )
+            ),
+            O.getOrElse(() =>
+              makeError(
+                error,
+                '@candlefinance.financekit.unknown_error_response_schema'
+              )
+            )
+          ),
+      })
+    ),
+    E.flatMap(
+      flow(
+        S.decode(S.parseJson(S.Array(AccountBalance))),
+        E.mapError((error) =>
+          makeError(error, '@candlefinance.financekit.unknown_response_schema')
+        )
+      )
+    )
   )
 }
 
-export async function accountBalanceHistory(
+export function accountBalanceHistory(
   params: typeof AccountDetailsHistoryParams.Type
-): Promise<readonly (typeof AccountBalance.Type)[]> {
-  const stringifiedParams = pipe(
-    params,
-    S.encodeSync(S.parseJson(AccountDetailsHistoryParams))
-  )
-  const stringifiedAccountBalanceHistory =
-    await Financekit.accountBalanceHistory(stringifiedParams)
+): E.Effect<
+  readonly (typeof AccountBalance.Type)[],
+  Discriminated<
+    typeof FinancekitError.Type,
+    'code',
+    | '@candlefinance.financekit.os_version_too_low'
+    | '@candlefinance.financekit.params_invalid'
+    | '@candlefinance.financekit.unknown'
+    | '@candlefinance.financekit.unknown_error_response_schema'
+    | '@candlefinance.financekit.unknown_response_schema'
+    | '@candlefinance.financekit.account_balance_history_invalid'
+    | '@candlefinance.financekit.unknown_current_balance_type'
+    | '@candlefinance.financekit.android_not_supported'
+  >
+> {
   return pipe(
-    stringifiedAccountBalanceHistory,
-    S.decodeSync(S.parseJson(S.parseJson(S.Array(AccountBalance))))
+    params,
+    S.encode(S.parseJson(AccountDetailsHistoryParams)),
+    E.mapError((error) =>
+      makeError(error, '@candlefinance.financekit.params_invalid')
+    ),
+    E.flatMap((stringifiedParams) =>
+      E.tryPromise({
+        try: () =>
+          financekitNativeModule.accountBalanceHistory(stringifiedParams),
+        catch: (error) =>
+          pipe(
+            error,
+            S.decodeUnknownOption(FinancekitError),
+            O.flatMap(
+              oLiftRefinement(
+                discriminateA('code', [
+                  '@candlefinance.financekit.android_not_supported',
+                  '@candlefinance.financekit.os_version_too_low',
+                  '@candlefinance.financekit.params_invalid',
+                  '@candlefinance.financekit.account_balance_history_invalid',
+                  '@candlefinance.financekit.unknown_current_balance_type',
+                  '@candlefinance.financekit.unknown',
+                ])
+              )
+            ),
+            O.getOrElse(() =>
+              makeError(
+                error,
+                '@candlefinance.financekit.unknown_error_response_schema'
+              )
+            )
+          ),
+      })
+    ),
+    E.flatMap(
+      flow(
+        S.decode(S.parseJson(S.parseJson(S.Array(AccountBalance)))),
+        E.mapError((error) =>
+          makeError(error, '@candlefinance.financekit.unknown_response_schema')
+        )
+      )
+    )
   )
 }
