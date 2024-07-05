@@ -78,12 +78,14 @@ enum TransactionStatus {
 
 const CurrencyAmount = S.Struct({
   amount: S.NumberFromString,
-  currencyCode: S.String,
+  // TODO: We should define our own models for everything in Financekit.swift as Apple seems to have custom logic in some of their Codable implementations
+  // This line for example following apple's own code should always be present but per testing can be undefined
+  currencyCode: S.OptionFromUndefinedOr(S.String),
 })
 
 const Transaction = S.Struct({
   id: S_CNDL_UUID,
-  accountId: S_CNDL_UUID,
+  accountID: S_CNDL_UUID,
   transactionAmount: CurrencyAmount,
   foreignCurrencyAmount: S.OptionFromUndefinedOr(CurrencyAmount),
   creditDebitIndicator: S.Enums(CreditDebitIndicator),
@@ -106,7 +108,7 @@ const AccountHistoryParams = S.Struct({
 const AccountDetailsHistoryParams = AccountHistoryParams.pipe(
   S.extend(
     S.Struct({
-      accountId: S_CNDL_UUID,
+      accountID: S_CNDL_UUID,
     })
   )
 )
