@@ -75,7 +75,7 @@ export default function App() {
       funcInput: {
         token: O.none(),
         isMonitoring: O.none(),
-        accountId: S_CNDL_UUID.make('00000000-0000-0000-0000-000000000000'),
+        accountID: S_CNDL_UUID.make('00000000-0000-0000-0000-000000000000'),
       },
       onResult: setTransactionHistoryResult,
     })
@@ -107,7 +107,7 @@ export default function App() {
       funcInput: {
         token: O.none(),
         isMonitoring: O.none(),
-        accountId: S_CNDL_UUID.make('00000000-0000-0000-0000-000000000000'),
+        accountID: S_CNDL_UUID.make('00000000-0000-0000-0000-000000000000'),
       },
       onResult: setAccountBalanceHistoryResult,
     })

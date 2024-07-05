@@ -51,14 +51,14 @@ class UnknownCurrentBalanceTypeError : Error {
     let message : String = MESSAGE_UNKNOWN_CURRENT_BALANCE_TYPE
 }
 
-struct FinanceKitQuery : Codable {
+struct CandleQuery : Codable {
     let limit: Int?
     let offset: Int?
 }
 
 @available(iOS 17.4, *)
 struct AccountDetailsHistoryParams : Codable {
-    let accountId: UUID
+    let accountID: UUID
     let token: FinanceStore.HistoryToken?
     let isMonitoring: Bool?
 }
@@ -70,7 +70,7 @@ struct AccountHistoryParams : Codable {
 }
 
 @available(iOS 17.4, *)
-struct FinanceKitChanges<Model> : Encodable where Model : Identifiable, Model : Encodable, Model.ID : Codable {
+struct CandleChanges<Model> : Encodable where Model : Identifiable, Model : Encodable, Model.ID : Codable {
     public let inserted: [Model]
     public let updated: [Model]
     public let deleted: [Model.ID]
@@ -78,7 +78,7 @@ struct FinanceKitChanges<Model> : Encodable where Model : Identifiable, Model : 
 }
 
 @available(iOS 17.4, *)
-struct FinanceKitAccount : Encodable, Identifiable {
+struct CandleAccount : Encodable, Identifiable {
     public let _tag: String
     public let id: UUID
     public let displayName: String
@@ -108,14 +108,14 @@ struct FinanceKitAccount : Encodable, Identifiable {
 }
 
 @available(iOS 17.4, *)
-struct FinanceKitAccountBalance : Encodable, Identifiable {
+struct CandleAccountBalance : Encodable, Identifiable {
     public let id: UUID
     public let accountID: UUID
-    public let currentBalance: FinanceKitCurrentBalance
+    public let currentBalance: CandleCurrentBalance
 }
 
 @available(iOS 17.4, *)
-struct FinanceKitCurrentBalance : Encodable {
+struct CandleCurrentBalance : Encodable {
     public let _tag: String
     public let booked: Balance?
     public let available: Balance?
@@ -191,7 +191,7 @@ class Financekit: NSObject {
                 guard let queryData = stringifiedQuery.data(using: .utf8) else {
                     return reject(CODE_QUERY_INVALID, MESSAGE_UNKNOWN_PARAMS_ISSUE, nil)
                 }
-                let queryObject = try JSONDecoder().decode(FinanceKitQuery.self, from: queryData)
+                let queryObject = try JSONDecoder().decode(CandleQuery.self, from: queryData)
                 let query = TransactionQuery(sortDescriptors: [], predicate: nil, limit: queryObject.limit, offset: queryObject.offset)
                 
                 let transactions = try await FinanceStore.shared.transactions(query: query)
@@ -217,9 +217,9 @@ class Financekit: NSObject {
                     return reject(CODE_PARAMS_INVALID, MESSAGE_UNKNOWN_PARAMS_ISSUE, nil)
                 }
                 let params = try JSONDecoder().decode(AccountDetailsHistoryParams.self, from: paramsData)
-                let transactionHistory = FinanceStore.shared.transactionHistory(forAccountID: params.accountId, since: params.token, isMonitoring: params.isMonitoring ?? true)
+                let transactionHistory = FinanceStore.shared.transactionHistory(forAccountID: params.accountID, since: params.token, isMonitoring: params.isMonitoring ?? true)
                 let transactionList = try await transactionHistory.reduce([]) { partialResult, element in
-                    partialResult + [FinanceKitChanges(inserted: element.inserted, updated: element.updated, deleted: element.deleted, newToken: element.newToken)]
+                    partialResult + [CandleChanges(inserted: element.inserted, updated: element.updated, deleted: element.deleted, newToken: element.newToken)]
                 }
                 
                 let data = try jsonEncoder.encode(transactionList)
@@ -243,12 +243,12 @@ class Financekit: NSObject {
                 guard let queryData: Data = stringifiedQuery.data(using: .utf8) else {
                     return reject(CODE_QUERY_INVALID, MESSAGE_UNKNOWN_PARAMS_ISSUE, nil)
                 }
-                let queryObject = try JSONDecoder().decode(FinanceKitQuery.self, from: queryData)
+                let queryObject = try JSONDecoder().decode(CandleQuery.self, from: queryData)
                 let query = AccountQuery(sortDescriptors: [], predicate: nil, limit: queryObject.limit, offset: queryObject.offset)
                 
                 let accounts = try await FinanceStore.shared.accounts(query: query)
                 let financekitAccounts = try accounts.map { account in
-                    return try FinanceKitAccount(account: account)
+                    return try CandleAccount(account: account)
                 }
                 
                 let data = try jsonEncoder.encode(financekitAccounts)
@@ -278,9 +278,9 @@ class Financekit: NSObject {
                 let accountHistory = FinanceStore.shared.accountHistory(since: params.token, isMonitoring: params.isMonitoring ?? true)
                 let accountList = try await accountHistory.reduce([]) { partialResult, element in
                     partialResult + [
-                        FinanceKitChanges(
-                            inserted: try element.inserted.map({ account in try FinanceKitAccount(account: account)}),
-                            updated: try element.updated.map({ account in try FinanceKitAccount(account: account)}),
+                        CandleChanges(
+                            inserted: try element.inserted.map({ account in try CandleAccount(account: account)}),
+                            updated: try element.updated.map({ account in try CandleAccount(account: account)}),
                             deleted: element.deleted, newToken: element.newToken)
                     ]
                 }
@@ -308,12 +308,12 @@ class Financekit: NSObject {
                 guard let queryData: Data = stringifiedQuery.data(using: .utf8) else {
                     return reject(CODE_QUERY_INVALID, MESSAGE_UNKNOWN_PARAMS_ISSUE, nil)
                 }
-                let queryObject = try JSONDecoder().decode(FinanceKitQuery.self, from: queryData)
+                let queryObject = try JSONDecoder().decode(CandleQuery.self, from: queryData)
                 let query = AccountBalanceQuery(sortDescriptors: [], predicate: nil, limit: queryObject.limit, offset: queryObject.offset)
                 let balances = try await FinanceStore.shared.accountBalances(query: query)
                 let financekitBalances = try balances.map { accountBalance in
-                    let currentBalance = try FinanceKitCurrentBalance(currentBalance: accountBalance.currentBalance)
-                    return FinanceKitAccountBalance(id: accountBalance.id, accountID: accountBalance.accountID, currentBalance: currentBalance)
+                    let currentBalance = try CandleCurrentBalance(currentBalance: accountBalance.currentBalance)
+                    return CandleAccountBalance(id: accountBalance.id, accountID: accountBalance.accountID, currentBalance: currentBalance)
                 }
                 
                 let data = try jsonEncoder.encode(financekitBalances)
@@ -340,12 +340,12 @@ class Financekit: NSObject {
                     return reject(CODE_PARAMS_INVALID, MESSAGE_UNKNOWN_PARAMS_ISSUE, nil)
                 }
                 let params = try JSONDecoder().decode(AccountDetailsHistoryParams.self, from: paramsData)
-                let accountBalanceHistory = FinanceStore.shared.accountBalanceHistory(forAccountID: params.accountId, since: params.token, isMonitoring: params.isMonitoring ?? true)
+                let accountBalanceHistory = FinanceStore.shared.accountBalanceHistory(forAccountID: params.accountID, since: params.token, isMonitoring: params.isMonitoring ?? true)
                 let accountBalanceList = try await accountBalanceHistory.reduce([]) { partialResult, element in
                     partialResult + [
-                        FinanceKitChanges(
-                            inserted: try element.inserted.map({ accountBalance in try FinanceKitAccountBalance(id: accountBalance.id, accountID: accountBalance.accountID, currentBalance: FinanceKitCurrentBalance(currentBalance: accountBalance.currentBalance))}),
-                            updated: try element.updated.map({ accountBalance in try FinanceKitAccountBalance(id: accountBalance.id, accountID: accountBalance.accountID, currentBalance: FinanceKitCurrentBalance(currentBalance: accountBalance.currentBalance))}),
+                        CandleChanges(
+                            inserted: try element.inserted.map({ accountBalance in try CandleAccountBalance(id: accountBalance.id, accountID: accountBalance.accountID, currentBalance: CandleCurrentBalance(currentBalance: accountBalance.currentBalance))}),
+                            updated: try element.updated.map({ accountBalance in try CandleAccountBalance(id: accountBalance.id, accountID: accountBalance.accountID, currentBalance: CandleCurrentBalance(currentBalance: accountBalance.currentBalance))}),
                             deleted: element.deleted,
                             newToken: element.newToken
                         )
