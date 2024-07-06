@@ -1,6 +1,6 @@
 {
   "name": "@candlefinance/financekit",
-  "version": "0.3.20",
+  "version": "0.3.21",
   "description": "Wraps FinanceKit on iOS for consumption in React Native.",
   "main": "lib/commonjs/index",
   "module": "lib/module/index",
