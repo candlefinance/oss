@@ -8,12 +8,14 @@ private let CODE_PARAMS_INVALID = "@candlefinance.financekit.params_invalid"
 private let CODE_QUERY_INVALID = "@candlefinance.financekit.query_invalid"
 private let CODE_TRANSACTION_HISTORY_INVALID = "@candlefinance.financekit.transaction_history_invalid"
 private let CODE_TRANSACTIONS_INVALID = "@candlefinance.financekit.transactions_invalid"
+private let CODE_UNAUTHORIZED_USAGE = "@candlefinance.financekit.unauthorized_financekit_usage"
 private let CODE_UNKNOWN = "@candlefinance.financekit.unknown"
 private let CODE_UNKNOWN_ACCOUNT_TYPE = "@candlefinance.financekit.unknown_account_type"
 private let CODE_UNKNOWN_AUTHORIZATION_STATUS = "@candlefinance.financekit.unknown_authorization_status"
 private let CODE_UNKNOWN_CURRENT_BALANCE_TYPE = "@candlefinance.financekit.unknown_current_balance_type"
 
 private let MESSAGE_LOW_OS_VERSION = "You are trying to use FinanceKit but your phone's OS is not 17.4.0 or above"
+private let MESSAGE_UNAUTHORIZED_USAGE = "You are trying to use FinanceKit but you did not have the user authorize you to do so first or the user rejected your request"
 private let MESSAGE_UNKNOWN_PARAMS_ISSUE = "Your request is invalid. Please verify the format of your parameters or file an issue on GitHub."
 private let MESSAGE_UNKNOWN_RESPONSE_ISSUE = "Your request received a response, but it couldn't be processed. Please contact Apple or file an issue on GitHub."
 private let MESSAGE_UNKNOWN = "Something went wrong. Please file an issue on GitHub or try again."
@@ -23,7 +25,7 @@ private let MESSAGE_UNKNOWN_CURRENT_BALANCE_TYPE = "A CurrentBalance with an unk
 
 @available(iOS 17.4, *)
 extension AuthorizationStatus {
-    var authorizationStatus: String {
+var authorizationStatus: String {
         get throws {
             switch self {
             case .authorized:
@@ -91,14 +93,14 @@ struct CandleAccount : Encodable, Identifiable {
         case .asset:
             self._tag = "asset"
             self.creditInformation = nil
-            
+
         case .liability(let liabilityAccount):
             self._tag = "liability"
             self.creditInformation = liabilityAccount.creditInformation
         @unknown default:
             throw UnknownAccountTypeError()
         }
-        
+
         self.id = account.id
         self.displayName = account.displayName
         self.accountDescription = account.accountDescription
@@ -141,7 +143,7 @@ struct CandleCurrentBalance : Encodable {
 
 @objc(Financekit)
 class Financekit: NSObject {
-    
+
     private let jsonEncoder = JSONEncoder()
     override init() {
         jsonEncoder.dateEncodingStrategy = .iso8601
@@ -163,7 +165,7 @@ class Financekit: NSObject {
             }
         }
     }
-    
+
     @objc(authorizationStatus:withRejecter:)
     func authorizationStatus(resolve: @escaping RCTPromiseResolveBlock, reject: @escaping RCTPromiseRejectBlock) {
         guard #available(iOS 17.4, *) else {
@@ -180,7 +182,13 @@ class Financekit: NSObject {
             }
         }
     }
-    
+
+    @available(iOS 17.4, *)
+    func isAuthorized() async throws -> Bool {
+        let authorizationStatus = try await FinanceStore.shared.authorizationStatus()
+        return (authorizationStatus == .authorized)
+    }
+
     @objc(transactions:withResolver:withRejecter:)
     func transactions(stringifiedQuery: String, resolve: @escaping RCTPromiseResolveBlock, reject: @escaping RCTPromiseRejectBlock) {
         guard #available(iOS 17.4, *) else {
@@ -188,12 +196,15 @@ class Financekit: NSObject {
         }
         Task {
             do {
+                if (try await !self.isAuthorized()) {
+                    return reject(CODE_UNAUTHORIZED_USAGE, MESSAGE_UNAUTHORIZED_USAGE, nil)
+                }
                 guard let queryData = stringifiedQuery.data(using: .utf8) else {
                     return reject(CODE_QUERY_INVALID, MESSAGE_UNKNOWN_PARAMS_ISSUE, nil)
                 }
                 let queryObject = try JSONDecoder().decode(CandleQuery.self, from: queryData)
                 let query = TransactionQuery(sortDescriptors: [], predicate: nil, limit: queryObject.limit, offset: queryObject.offset)
-                
+
                 let transactions = try await FinanceStore.shared.transactions(query: query)
                 let data = try jsonEncoder.encode(transactions)
                 guard let stringifiedResponse = String(data: data, encoding: .utf8) else {
@@ -205,7 +216,7 @@ class Financekit: NSObject {
             }
         }
     }
-    
+
     @objc(transactionHistory:withResolver:withRejecter:)
     func transactionHistory(stringifiedParams: String, resolve: @escaping RCTPromiseResolveBlock, reject: @escaping RCTPromiseRejectBlock) {
         guard #available(iOS 17.4, *) else {
@@ -213,6 +224,9 @@ class Financekit: NSObject {
         }
         Task {
             do {
+                if (try await !self.isAuthorized()) {
+                    return reject(CODE_UNAUTHORIZED_USAGE, MESSAGE_UNAUTHORIZED_USAGE, nil)
+                }
                 guard let paramsData: Data = stringifiedParams.data(using: .utf8) else {
                     return reject(CODE_PARAMS_INVALID, MESSAGE_UNKNOWN_PARAMS_ISSUE, nil)
                 }
@@ -221,7 +235,7 @@ class Financekit: NSObject {
                 let transactionList = try await transactionHistory.reduce([]) { partialResult, element in
                     partialResult + [CandleChanges(inserted: element.inserted, updated: element.updated, deleted: element.deleted, newToken: element.newToken)]
                 }
-                
+
                 let data = try jsonEncoder.encode(transactionList)
                 guard let stringifiedTransactionList = String(data: data, encoding: .utf8) else {
                     return reject(CODE_TRANSACTION_HISTORY_INVALID, MESSAGE_UNKNOWN_RESPONSE_ISSUE, nil)
@@ -232,25 +246,28 @@ class Financekit: NSObject {
             }
         }
     }
-    
+
     @objc(accounts:withResolver:withRejecter:)
     func accounts(stringifiedQuery: String, resolve: @escaping RCTPromiseResolveBlock, reject: @escaping RCTPromiseRejectBlock) {
         guard #available(iOS 17.4, *) else {
             return reject(CODE_LOW_OS_VERSION, MESSAGE_LOW_OS_VERSION, nil)
         }
         Task {
+            if (try await !self.isAuthorized()) {
+                return reject(CODE_UNAUTHORIZED_USAGE, MESSAGE_UNAUTHORIZED_USAGE, nil)
+            }
             do {
                 guard let queryData: Data = stringifiedQuery.data(using: .utf8) else {
                     return reject(CODE_QUERY_INVALID, MESSAGE_UNKNOWN_PARAMS_ISSUE, nil)
                 }
                 let queryObject = try JSONDecoder().decode(CandleQuery.self, from: queryData)
                 let query = AccountQuery(sortDescriptors: [], predicate: nil, limit: queryObject.limit, offset: queryObject.offset)
-                
+
                 let accounts = try await FinanceStore.shared.accounts(query: query)
                 let financekitAccounts = try accounts.map { account in
                     return try CandleAccount(account: account)
                 }
-                
+
                 let data = try jsonEncoder.encode(financekitAccounts)
                 guard let stringifiedResponse = String(data: data, encoding: .utf8) else {
                     return reject(CODE_ACCOUNTS_INVALID, MESSAGE_UNKNOWN_RESPONSE_ISSUE, nil)
@@ -263,7 +280,7 @@ class Financekit: NSObject {
             }
         }
     }
-    
+
     @objc(accountHistory:withResolver:withRejecter:)
     func accountHistory(stringifiedParams: String, resolve: @escaping RCTPromiseResolveBlock, reject: @escaping RCTPromiseRejectBlock) {
         guard #available(iOS 17.4, *) else {
@@ -271,6 +288,9 @@ class Financekit: NSObject {
         }
         Task {
             do {
+                if (try await !self.isAuthorized()) {
+                    return reject(CODE_UNAUTHORIZED_USAGE, MESSAGE_UNAUTHORIZED_USAGE, nil)
+                }
                 guard let paramsData: Data = stringifiedParams.data(using: .utf8) else {
                     return reject(CODE_PARAMS_INVALID, MESSAGE_UNKNOWN_PARAMS_ISSUE, nil)
                 }
@@ -284,7 +304,7 @@ class Financekit: NSObject {
                             deleted: element.deleted, newToken: element.newToken)
                     ]
                 }
-                
+
                 let data = try jsonEncoder.encode(accountList)
                 guard let stringifiedTransactionList = String(data: data, encoding: .utf8) else {
                     return reject(CODE_TRANSACTION_HISTORY_INVALID, MESSAGE_UNKNOWN_RESPONSE_ISSUE, nil)
@@ -297,7 +317,7 @@ class Financekit: NSObject {
             }
         }
     }
-    
+
     @objc(accountBalances:withResolver:withRejecter:)
     func accountBalances(stringifiedQuery: String, resolve: @escaping RCTPromiseResolveBlock, reject: @escaping RCTPromiseRejectBlock) {
         guard #available(iOS 17.4, *) else {
@@ -305,6 +325,9 @@ class Financekit: NSObject {
         }
         Task {
             do {
+                if (try await !self.isAuthorized()) {
+                    return reject(CODE_UNAUTHORIZED_USAGE, MESSAGE_UNAUTHORIZED_USAGE, nil)
+                }
                 guard let queryData: Data = stringifiedQuery.data(using: .utf8) else {
                     return reject(CODE_QUERY_INVALID, MESSAGE_UNKNOWN_PARAMS_ISSUE, nil)
                 }
@@ -315,7 +338,7 @@ class Financekit: NSObject {
                     let currentBalance = try CandleCurrentBalance(currentBalance: accountBalance.currentBalance)
                     return CandleAccountBalance(id: accountBalance.id, accountID: accountBalance.accountID, currentBalance: currentBalance)
                 }
-                
+
                 let data = try jsonEncoder.encode(financekitBalances)
                 guard let stringifiedResponse = String(data: data, encoding: .utf8) else {
                     return reject(CODE_ACCOUNT_BALANCES_INVALID, MESSAGE_UNKNOWN_RESPONSE_ISSUE, nil)
@@ -328,7 +351,7 @@ class Financekit: NSObject {
             }
         }
     }
-    
+
     @objc(accountBalanceHistory:withResolver:withRejecter:)
     func accountBalanceHistory(stringifiedParams: String, resolve: @escaping RCTPromiseResolveBlock, reject: @escaping RCTPromiseRejectBlock) {
         guard #available(iOS 17.4, *) else {
@@ -336,6 +359,9 @@ class Financekit: NSObject {
         }
         Task {
             do {
+                if (try await !self.isAuthorized()) {
+                    return reject(CODE_UNAUTHORIZED_USAGE, MESSAGE_UNAUTHORIZED_USAGE, nil)
+                }
                 guard let paramsData: Data = stringifiedParams.data(using: .utf8) else {
                     return reject(CODE_PARAMS_INVALID, MESSAGE_UNKNOWN_PARAMS_ISSUE, nil)
                 }
@@ -351,7 +377,7 @@ class Financekit: NSObject {
                         )
                     ]
                 }
-                
+
                 let data = try jsonEncoder.encode(accountBalanceList)
                 guard let stringifiedAccountBalanceList = String(data: data, encoding: .utf8) else {
                     return reject(CODE_ACCOUNT_BALANCE_HISTORY_INVALID, MESSAGE_UNKNOWN_RESPONSE_ISSUE, nil)

@@ -186,6 +186,7 @@ export const FinancekitError = S.Struct({
     '@candlefinance.financekit.query_invalid',
     '@candlefinance.financekit.transaction_history_invalid',
     '@candlefinance.financekit.transactions_invalid',
+    '@candlefinance.financekit.unauthorized_financekit_usage',
     '@candlefinance.financekit.unknown',
     '@candlefinance.financekit.unknown_account_type',
     '@candlefinance.financekit.unknown_authorization_status',
@@ -318,6 +319,7 @@ export function transactions(
     | '@candlefinance.financekit.unknown_response_schema'
     | '@candlefinance.financekit.transactions_invalid'
     | '@candlefinance.financekit.android_not_supported'
+    | '@candlefinance.financekit.unauthorized_financekit_usage'
   >
 > {
   return pipe(
@@ -342,6 +344,7 @@ export function transactions(
                   '@candlefinance.financekit.query_invalid',
                   '@candlefinance.financekit.unknown',
                   '@candlefinance.financekit.transactions_invalid',
+                  '@candlefinance.financekit.unauthorized_financekit_usage',
                 ])
               )
             ),
@@ -379,6 +382,7 @@ export function transactionHistory(
     | '@candlefinance.financekit.unknown_response_schema'
     | '@candlefinance.financekit.transaction_history_invalid'
     | '@candlefinance.financekit.android_not_supported'
+    | '@candlefinance.financekit.unauthorized_financekit_usage'
   >
 > {
   return pipe(
@@ -402,6 +406,7 @@ export function transactionHistory(
                   '@candlefinance.financekit.params_invalid',
                   '@candlefinance.financekit.transaction_history_invalid',
                   '@candlefinance.financekit.unknown',
+                  '@candlefinance.financekit.unauthorized_financekit_usage',
                 ])
               )
             ),
@@ -440,6 +445,7 @@ export function accounts(
     | '@candlefinance.financekit.unknown_account_type'
     | '@candlefinance.financekit.accounts_invalid'
     | '@candlefinance.financekit.android_not_supported'
+    | '@candlefinance.financekit.unauthorized_financekit_usage'
   >
 > {
   return pipe(
@@ -464,6 +470,7 @@ export function accounts(
                   '@candlefinance.financekit.accounts_invalid',
                   '@candlefinance.financekit.unknown_account_type',
                   '@candlefinance.financekit.unknown',
+                  '@candlefinance.financekit.unauthorized_financekit_usage',
                 ])
               )
             ),
@@ -502,6 +509,7 @@ export function accountHistory(
     | '@candlefinance.financekit.transaction_history_invalid'
     | '@candlefinance.financekit.unknown_account_type'
     | '@candlefinance.financekit.android_not_supported'
+    | '@candlefinance.financekit.unauthorized_financekit_usage'
   >
 > {
   return pipe(
@@ -526,6 +534,7 @@ export function accountHistory(
                   '@candlefinance.financekit.transaction_history_invalid',
                   '@candlefinance.financekit.unknown_account_type',
                   '@candlefinance.financekit.unknown',
+                  '@candlefinance.financekit.unauthorized_financekit_usage',
                 ])
               )
             ),
@@ -564,6 +573,7 @@ export function accountBalances(
     | '@candlefinance.financekit.account_balances_invalid'
     | '@candlefinance.financekit.unknown_current_balance_type'
     | '@candlefinance.financekit.android_not_supported'
+    | '@candlefinance.financekit.unauthorized_financekit_usage'
   >
 > {
   return pipe(
@@ -588,6 +598,7 @@ export function accountBalances(
                   '@candlefinance.financekit.account_balances_invalid',
                   '@candlefinance.financekit.unknown_current_balance_type',
                   '@candlefinance.financekit.unknown',
+                  '@candlefinance.financekit.unauthorized_financekit_usage',
                 ])
               )
             ),
@@ -626,6 +637,7 @@ export function accountBalanceHistory(
     | '@candlefinance.financekit.account_balance_history_invalid'
     | '@candlefinance.financekit.unknown_current_balance_type'
     | '@candlefinance.financekit.android_not_supported'
+    | '@candlefinance.financekit.unauthorized_financekit_usage'
   >
 > {
   return pipe(
@@ -651,6 +663,7 @@ export function accountBalanceHistory(
                   '@candlefinance.financekit.account_balance_history_invalid',
                   '@candlefinance.financekit.unknown_current_balance_type',
                   '@candlefinance.financekit.unknown',
+                  '@candlefinance.financekit.unauthorized_financekit_usage',
                 ])
               )
             ),
