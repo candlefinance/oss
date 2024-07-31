@@ -1,5 +1,6 @@
 package com.candlefinance.prefs
 
+import android.content.Context
 import android.content.SharedPreferences
 import com.facebook.react.bridge.Promise
 import com.facebook.react.bridge.ReactApplicationContext
@@ -8,7 +9,9 @@ import com.facebook.react.bridge.ReactMethod
 
 class PrefsModule(reactContext: ReactApplicationContext) :
   ReactContextBaseJavaModule(reactContext) {
-  private val sharedPreferences: SharedPreferences = reactContext.getSharedPreferences("foo", 0)
+  private val sharedPreferences: SharedPreferences =
+    reactContext.getSharedPreferences("com.candlefinance.prefs", Context.MODE_PRIVATE)
+
   override fun getName(): String = "Prefs"
 
   @ReactMethod
