@@ -10,10 +10,29 @@ npm install @candlefinance/prefs
 
 ## Usage
 
-```js
-// TODO: document usages
+This package is optimized for usage with [Effect](https://effect.website), but can also be used in any React Native project.
 
-// ...
+To use `prefs` **with** Effect, check out the [example app](example/src/App.tsx/).
+
+To use `prefs` **without** Effect, you can use the following bridging functions:
+
+```ts
+import { Effect, Option } from 'effect'
+import { getPref, setPref, deletePref } from '@candlefinance/prefs'
+
+// SET A VALUE...
+// Throws on unexpected errors
+await Effect.runPromise(setPref('themeColor', 'black'))
+
+// GET A VALUE...
+// Returns `string | undefined`. Throws on unexpected errors.
+const themeColor = Option.getOrUndefined(
+  await Effect.runPromise(getPref('themeColor'))
+)
+
+// DELETE A VALUE...
+// Throws on unexpected errors
+await Effect.runPromise(deletePref('themeColor'))
 ```
 
 ## Contributing

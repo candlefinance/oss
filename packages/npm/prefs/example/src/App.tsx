@@ -1,7 +1,7 @@
 import 'fast-text-encoding'
 
 import { deletePref, getPref, setPref } from '@candlefinance/prefs'
-import { Effect as E } from 'effect'
+import { Effect, Option, pipe } from 'effect'
 import * as React from 'react'
 import { StyleSheet, Text, View } from 'react-native'
 
@@ -9,26 +9,30 @@ export default function App() {
   const [summary, setSummary] = React.useState('Loading...')
 
   React.useEffect(() => {
-    void E.runPromise(
-      E.Do.pipe(
-        E.tap(() =>
-          getPref('foo').pipe(
-            E.tap((response) => setSummary('BEFORE SETTING: ' + response))
-          )
+    const formatResponse = (response: Option.Option<string>) =>
+      Option.getOrElse(response, () => '<unset>')
+    void Effect.runPromise(
+      pipe(
+        // GET PREF
+        getPref('themeColor'),
+        Effect.tap((response) =>
+          setSummary('BEFORE SETTING: ' + formatResponse(response))
         ),
-        E.tap(() => E.sleep('2 seconds')),
-        E.tap(() => setPref('foo', 'bar')),
-        E.tap(() =>
-          getPref('foo').pipe(
-            E.tap((response) => setSummary('AFTER SETTING: ' + response))
-          )
+
+        // SET PREF
+        Effect.tap(() => Effect.sleep('2 seconds')),
+        Effect.tap(() => setPref('themeColor', 'black')),
+        Effect.flatMap(() => getPref('themeColor')),
+        Effect.tap((response) =>
+          setSummary('AFTER SETTING: ' + formatResponse(response))
         ),
-        E.tap(() => E.sleep('2 seconds')),
-        E.tap(() => deletePref('foo')),
-        E.tap(() =>
-          getPref('foo').pipe(
-            E.tap((response) => setSummary('AFTER DELETING: ' + response))
-          )
+
+        // DELETE PREF
+        Effect.tap(() => Effect.sleep('2 seconds')),
+        Effect.tap(() => deletePref('themeColor')),
+        Effect.flatMap(() => getPref('themeColor')),
+        Effect.tap((response) =>
+          setSummary('AFTER DELETING: ' + formatResponse(response))
         )
       )
     )
