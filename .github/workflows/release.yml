@@ -11,8 +11,9 @@ jobs:
       fail-fast: false
       matrix:
         workingDirectory: [
+            "packages/npm/prefs",
             # "packages/npm/send",
-            "packages/npm/financekit",
+            # "packages/npm/financekit",
           ]
     uses: ./.github/workflows/release_shared.yml
     with:
