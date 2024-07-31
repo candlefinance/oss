@@ -11,9 +11,9 @@ const LINKING_ERROR =
 
 // FIXME: Return LINKING_ERROR through normal error channel instead of using Proxy
 const prefsNativeModule: {
-  getPref: (key: string) => Promise<string>
-  setPref: (key: string, value: string) => Promise<void>
-  deletePref: (key: string) => Promise<void>
+  getPref: (key: string) => Promise<string | null>
+  setPref: (key: string, value: string) => Promise<null>
+  deletePref: (key: string) => Promise<null>
 } = NativeModules.Prefs
   ? NativeModules.Prefs
   : new Proxy(
@@ -44,8 +44,8 @@ export const PrefsError = S.Struct({
   domain: S.OptionFromUndefinedOr(S.String),
   message: S.String,
   code: S.Literal(
-    '@candlefinance.prefs.key_not_found',
-    '@candlefinance.prefs.unknown',
+    '@candlefinance.prefs.edit_commit_failed',
+    '@candlefinance.prefs.unexpected',
     '@candlefinance.prefs.unknown_error_response_schema'
   ),
 })
@@ -68,12 +68,11 @@ const makeError = <Code extends String & (typeof PrefsError.Type)['code']>(
 export const getPref = (
   key: string
 ): E.Effect<
-  string,
+  O.Option<string>,
   Discriminated<
     typeof PrefsError.Type,
     'code',
-    | '@candlefinance.prefs.key_not_found'
-    | '@candlefinance.prefs.unknown'
+    | '@candlefinance.prefs.unexpected'
     | '@candlefinance.prefs.unknown_error_response_schema'
   >
 > =>
@@ -87,10 +86,7 @@ export const getPref = (
           Either.getRight,
           O.flatMap(
             oLiftRefinement(
-              discriminateA('code', [
-                '@candlefinance.prefs.key_not_found',
-                '@candlefinance.prefs.unknown',
-              ])
+              discriminateA('code', ['@candlefinance.prefs.unexpected'])
             )
           ),
           O.getOrElse(() =>
@@ -100,21 +96,14 @@ export const getPref = (
             )
           )
         ),
-    })
+    }),
+    E.map(O.fromNullable)
   )
 
 export const setPref = (
   key: string,
   value: string
-): E.Effect<
-  void,
-  Discriminated<
-    typeof PrefsError.Type,
-    'code',
-    | '@candlefinance.prefs.unknown'
-    | '@candlefinance.prefs.unknown_error_response_schema'
-  >
-> =>
+): E.Effect<void, typeof PrefsError.Type> =>
   pipe(
     E.tryPromise({
       try: () => prefsNativeModule.setPref(key, value),
@@ -125,7 +114,10 @@ export const setPref = (
           Either.getRight,
           O.flatMap(
             oLiftRefinement(
-              discriminateA('code', ['@candlefinance.prefs.unknown'])
+              discriminateA('code', [
+                '@candlefinance.prefs.unexpected',
+                '@candlefinance.prefs.edit_commit_failed',
+              ])
             )
           ),
           O.getOrElse(() =>
@@ -140,16 +132,7 @@ export const setPref = (
 
 export const deletePref = (
   key: string
-): E.Effect<
-  void,
-  Discriminated<
-    typeof PrefsError.Type,
-    'code',
-    | '@candlefinance.prefs.key_not_found'
-    | '@candlefinance.prefs.unknown'
-    | '@candlefinance.prefs.unknown_error_response_schema'
-  >
-> =>
+): E.Effect<void, typeof PrefsError.Type> =>
   pipe(
     E.tryPromise({
       try: () => prefsNativeModule.deletePref(key),
@@ -161,8 +144,8 @@ export const deletePref = (
           O.flatMap(
             oLiftRefinement(
               discriminateA('code', [
-                '@candlefinance.prefs.unknown',
-                '@candlefinance.prefs.key_not_found',
+                '@candlefinance.prefs.unexpected',
+                '@candlefinance.prefs.edit_commit_failed',
               ])
             )
           ),

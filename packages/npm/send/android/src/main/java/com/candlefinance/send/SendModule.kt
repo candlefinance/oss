@@ -100,8 +100,7 @@ data class Request(
             contentTypeHeader, utf8ContentTypes
           )
         ) body.toRequestBody()
-        else body.decodeBase64()?.toRequestBody()
-          ?: throw SendException.RequestBodyNotBase64
+        else body.decodeBase64()?.toRequestBody() ?: throw SendException.RequestBodyNotBase64
       }
     )
 
@@ -126,8 +125,8 @@ data class Response(
       val bodyIsGzipped = okHttpResponse.headers.values("content-encoding")
         .let { if (it.isEmpty()) null else it.last() } == "gzip"
       val bodyIsUTF8 = bodyIsUTF8(
-        okHttpResponse.headers.values("content-type")
-          .let { if (it.isEmpty()) null else it.last() }, request.utf8ContentTypes
+        okHttpResponse.headers.values("content-type").let { if (it.isEmpty()) null else it.last() },
+        request.utf8ContentTypes
       )
 
       if (responseBody.contentLength() == 0L) {
@@ -162,9 +161,7 @@ class SendModule(reactContext: ReactApplicationContext) : ReactContextBaseJavaMo
       .build()
   }
 
-  override fun getName(): String {
-    return NAME
-  }
+  override fun getName(): String = NAME
 
   @ReactMethod
   fun send(stringifiedRequest: String, promise: Promise) {
@@ -227,6 +224,7 @@ class SendModule(reactContext: ReactApplicationContext) : ReactContextBaseJavaMo
 
   companion object {
     const val NAME = "Send"
+
     const val CODE_REQUEST_INVALID = "@candlefinance.send.request_invalid"
     const val CODE_NO_RESPONSE = "@candlefinance.send.no_response"
     const val CODE_RESPONSE_INVALID = "@candlefinance.send.response_invalid"
@@ -238,7 +236,6 @@ class SendModule(reactContext: ReactApplicationContext) : ReactContextBaseJavaMo
       "Your request did not receive a response. Please verify your Internet connection."
     const val MESSAGE_RESPONSE_INVALID =
       "Your request received a response, but it couldn't be processed. Please verify the configuration of your server."
-    const val MESSAGE_UNKNOWN =
-      "Something went wrong. Please file an issue on GitHub or try again."
+    const val MESSAGE_UNKNOWN = "Something went wrong. Please file an issue on GitHub or try again."
   }
 }
