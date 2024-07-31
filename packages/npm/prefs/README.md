@@ -35,6 +35,8 @@ const themeColor = Option.getOrUndefined(
 await Effect.runPromise(deletePref('themeColor'))
 ```
 
+> **Important Note:** To access prefs saved using this library from native Android code (or to write prefs from native Android code and then access them using this library), initialize SharedPreferences in your native Android code with the file name `com.candlefinance.prefs`.
+
 ## Contributing
 
 See the [contributing guide](CONTRIBUTING.md) to learn how to contribute to the repository and the development workflow.
