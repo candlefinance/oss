@@ -7,9 +7,15 @@ import com.facebook.react.bridge.ReactContextBaseJavaModule
 import com.facebook.react.bridge.ReactMethod
 import com.facebook.react.bridge.Promise
 
-class Financekit(reactContext: ReactApplicationContext) : ReactContextBaseJavaModule(reactContext) {
+private fun Promise.rejectionStub() = reject(
+  "@candlefinance.financekit.android_not_supported",
+  "This method is not supported on Android",
+  Exception()
+)
+
+class FinancekitModule(reactContext: ReactApplicationContext) :
+  ReactContextBaseJavaModule(reactContext) {
   override fun getName(): String = "Financekit"
-    private fun Promise.rejectionStub() = reject("@candlefinance.financekit.android_not_supported", "This method is not supported on Android", Exception())
 
   @ReactMethod
   fun requestAuthorization(promise: Promise) = promise.resolve("denied")
