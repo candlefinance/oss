@@ -9,10 +9,11 @@ const LINKING_ERROR =
   '- You rebuilt the app after installing the package\n' +
   '- You are not using Expo Go\n'
 
+// FIXME: Return LINKING_ERROR through normal error channel instead of using Proxy
 const prefsNativeModule: {
-  getString: (key: string) => Promise<string>
-  setString: (key: string, value: string) => Promise<void>
-  deleteString: (key: string) => Promise<void>
+  getPref: (key: string) => Promise<string>
+  setPref: (key: string, value: string) => Promise<void>
+  deletePref: (key: string) => Promise<void>
 } = NativeModules.Prefs
   ? NativeModules.Prefs
   : new Proxy(
@@ -64,7 +65,7 @@ const makeError = <Code extends String & (typeof PrefsError.Type)['code']>(
 
 // NOTE: The React Native bridge stringifies all objects anyway; we just do it manually so we can take advantage of Swift.Codable and kotlinx.serialization to simplify the native code
 // FIXME: Also validate that output is a string?
-export function getString(
+export const getPref = (
   key: string
 ): E.Effect<
   string,
@@ -75,10 +76,10 @@ export function getString(
     | '@candlefinance.prefs.unknown'
     | '@candlefinance.prefs.unknown_error_response_schema'
   >
-> {
-  return pipe(
+> =>
+  pipe(
     E.tryPromise({
-      try: () => prefsNativeModule.getString(key),
+      try: () => prefsNativeModule.getPref(key),
       catch: (error) =>
         pipe(
           error,
@@ -101,9 +102,8 @@ export function getString(
         ),
     })
   )
-}
 
-export function setString(
+export const setPref = (
   key: string,
   value: string
 ): E.Effect<
@@ -114,10 +114,10 @@ export function setString(
     | '@candlefinance.prefs.unknown'
     | '@candlefinance.prefs.unknown_error_response_schema'
   >
-> {
-  return pipe(
+> =>
+  pipe(
     E.tryPromise({
-      try: () => prefsNativeModule.setString(key, value),
+      try: () => prefsNativeModule.setPref(key, value),
       catch: (error) =>
         pipe(
           error,
@@ -137,9 +137,8 @@ export function setString(
         ),
     })
   )
-}
 
-export function deleteString(
+export const deletePref = (
   key: string
 ): E.Effect<
   void,
@@ -150,10 +149,10 @@ export function deleteString(
     | '@candlefinance.prefs.unknown'
     | '@candlefinance.prefs.unknown_error_response_schema'
   >
-> {
-  return pipe(
+> =>
+  pipe(
     E.tryPromise({
-      try: () => prefsNativeModule.deleteString(key),
+      try: () => prefsNativeModule.deletePref(key),
       catch: (error) =>
         pipe(
           error,
@@ -176,4 +175,3 @@ export function deleteString(
         ),
     })
   )
-}

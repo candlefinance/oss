@@ -1,31 +1,32 @@
 import 'fast-text-encoding'
 
-import { deleteString, getString, setString } from '@candlefinance/prefs'
+import { deletePref, getPref, setPref } from '@candlefinance/prefs'
 import { Effect as E } from 'effect'
 import * as React from 'react'
 import { StyleSheet, Text, View } from 'react-native'
 
 export default function App() {
   const [summary, setSummary] = React.useState('Loading...')
+
   React.useEffect(() => {
-    E.runPromise(
+    void E.runPromise(
       E.Do.pipe(
         E.tap(() =>
-          getString('foo').pipe(
+          getPref('foo').pipe(
             E.tap((response) => setSummary('BEFORE SETTING: ' + response))
           )
         ),
         E.tap(() => E.sleep('2 seconds')),
-        E.tap(() => setString('foo', 'bar')),
+        E.tap(() => setPref('foo', 'bar')),
         E.tap(() =>
-          getString('foo').pipe(
+          getPref('foo').pipe(
             E.tap((response) => setSummary('AFTER SETTING: ' + response))
           )
         ),
         E.tap(() => E.sleep('2 seconds')),
-        E.tap(() => deleteString('foo')),
+        E.tap(() => deletePref('foo')),
         E.tap(() =>
-          getString('foo').pipe(
+          getPref('foo').pipe(
             E.tap((response) => setSummary('AFTER DELETING: ' + response))
           )
         )

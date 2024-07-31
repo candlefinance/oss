@@ -1,6 +1,5 @@
-import * as React from 'react'
-
 import { send } from '@candlefinance/send'
+import * as React from 'react'
 import { StyleSheet, Text, View } from 'react-native'
 
 export const serializeError = (error: unknown) => {
