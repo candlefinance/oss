@@ -144,7 +144,11 @@ data class Response(
 }
 
 class SendModule(reactContext: ReactApplicationContext) : ReactContextBaseJavaModule(reactContext) {
-  private val cookieManager by lazy { PersistentCookieJar(SetCookieCache(), SharedPrefsCookiePersistor(reactContext)) }
+  private val cookieManager by lazy {
+    PersistentCookieJar(
+      SetCookieCache(), SharedPrefsCookiePersistor(reactContext)
+    )
+  }
 
   private val client by lazy {
     OkHttpClient.Builder()
@@ -157,9 +161,7 @@ class SendModule(reactContext: ReactApplicationContext) : ReactContextBaseJavaMo
       .build()
   }
 
-  override fun getName(): String {
-    return NAME
-  }
+  override fun getName(): String = NAME
 
   @ReactMethod
   fun send(stringifiedRequest: String, promise: Promise) {
@@ -222,6 +224,7 @@ class SendModule(reactContext: ReactApplicationContext) : ReactContextBaseJavaMo
 
   companion object {
     const val NAME = "Send"
+
     const val CODE_REQUEST_INVALID = "@candlefinance.send.request_invalid"
     const val CODE_NO_RESPONSE = "@candlefinance.send.no_response"
     const val CODE_RESPONSE_INVALID = "@candlefinance.send.response_invalid"
