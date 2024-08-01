@@ -1,6 +1,6 @@
 PODS:
   - boost (1.83.0)
-  - candlefinance-prefs (0.3.14):
+  - candlefinance-prefs (0.3.22):
     - DoubleConversion
     - glog
     - RCT-Folly (= 2024.01.01.00)
@@ -1314,7 +1314,7 @@ EXTERNAL SOURCES:
 
 SPEC CHECKSUMS:
   boost: d3f49c53809116a5d38da093a8aa78bf551aed09
-  candlefinance-prefs: 163bc73bfd7b8926c2c84cf55ad28989854c8088
+  candlefinance-prefs: c8c40d2f240a9863a4007961eb619e2811ee2a06
   DoubleConversion: 76ab83afb40bddeeee456813d9c04f67f78771b5
   FBLazyVector: 898d14d17bf19e2435cafd9ea2a1033efe445709
   fmt: 4c2741a687cc09f0634a2e2c72a838b99f1ff120
@@ -1368,6 +1368,6 @@ SPEC CHECKSUMS:
   SocketRocket: abac6f5de4d4d62d24e11868d7a2f427e0ef940d
   Yoga: 348f8b538c3ed4423eb58a8e5730feec50bce372
 
-PODFILE CHECKSUM: 978a9588449ad9b8f7fc872a181d9140e7705193
+PODFILE CHECKSUM: 27ba4f851636a15e1da45729e0af04ae188312fd
 
-COCOAPODS: 1.15.2
+COCOAPODS: 1.14.3
