@@ -33,7 +33,7 @@ const themeColor = getPref('themeColor')
 await deletePref('themeColor')
 ```
 
-> **Important Notes #1**
+> **Important Notes**
 >
 > - SharedPreferences on Android does not expose a default app-wide instance (like UserDefaults on iOS). To a) access prefs saved using this library from native Android code, or b) write prefs from native Android code and then access them using this library, initialize SharedPreferences in your native Android code with the file name `com.candlefinance.prefs`.
 > - Both SharedPreferences and UserDefaults support saving various data types including strings, arrays, and numbers. This library only supports saving and retrieving string values. If you attempt to retrieve a non-string value set in native Android code, this library will return an error with the code `@candlefinance.prefs.non_string_value`.
