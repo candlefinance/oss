@@ -26,7 +26,7 @@ await setPref('themeColor', 'black')
 
 // GET A VALUE...
 // Returns `string | undefined`. Throws on unexpected errors.
-const themeColor = getPref('themeColor')
+const themeColor = await getPref('themeColor')
 
 // DELETE A VALUE...
 // Throws on unexpected errors
