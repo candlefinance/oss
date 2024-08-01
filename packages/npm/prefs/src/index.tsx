@@ -1,5 +1,5 @@
-import { Schema as S } from '@effect/schema'
-import { Effect as E, Either, Option as O, pipe } from 'effect'
+import { Schema } from '@effect/schema'
+import { Effect, Either, Option, pipe } from 'effect'
 import { NativeModules, Platform } from 'react-native'
 import { discriminateA, oLiftRefinement, type Discriminated } from './utils'
 
@@ -25,71 +25,76 @@ const prefsNativeModule: {
       }
     )
 
-export const S_CNDL_UUID = S.UUID.pipe(S.brand('CNDL_UUID'))
-export const S_CNDL_Int = S.Int.pipe(S.brand('CNDL_Int'))
+export const S_CNDL_UUID = Schema.UUID.pipe(Schema.brand('CNDL_UUID'))
+export const S_CNDL_Int = Schema.Int.pipe(Schema.brand('CNDL_Int'))
 
-export const PrefsError = S.Struct({
-  userInfo: S.OptionFromNullOr(S.Any),
-  nativeStackAndroid: S.OptionFromUndefinedOr(
-    S.Array(
-      S.Struct({
+export class PrefsError extends Schema.Class<PrefsError>('PrefsError')({
+  userInfo: Schema.OptionFromNullOr(Schema.Any),
+  nativeStackAndroid: Schema.OptionFromUndefinedOr(
+    Schema.Array(
+      Schema.Struct({
         lineNumber: S_CNDL_Int,
-        file: S.String,
-        methodName: S.String,
-        class: S.String,
+        file: Schema.String,
+        methodName: Schema.String,
+        class: Schema.String,
       })
     )
   ),
-  nativeStackIOS: S.OptionFromUndefinedOr(S.Array(S.String)),
-  domain: S.OptionFromUndefinedOr(S.String),
-  message: S.String,
-  code: S.Literal(
-    '@candlefinance.prefs.edit_commit_failed',
+  nativeStackIOS: Schema.OptionFromUndefinedOr(Schema.Array(Schema.String)),
+  domain: Schema.OptionFromUndefinedOr(Schema.String),
+  message: Schema.String,
+  code: Schema.Literal(
+    '@candlefinance.prefs.write_failed',
+    '@candlefinance.prefs.non_string_value',
     '@candlefinance.prefs.unexpected',
     '@candlefinance.prefs.unknown_error_response_schema'
   ),
-})
+}) {}
 
-const makeError = <Code extends String & (typeof PrefsError.Type)['code']>(
+const makeError = <Code extends String & PrefsError['code']>(
   error: unknown,
   code: Code
-): Discriminated<typeof PrefsError.Type, 'code', Code> =>
+): Discriminated<PrefsError, 'code', Code> =>
   PrefsError.make({
     code: code,
-    userInfo: O.none(),
+    userInfo: Option.none(),
     message: `${error}`,
-    nativeStackAndroid: O.none(),
-    nativeStackIOS: O.none(),
-    domain: O.none(),
-  }) as Discriminated<typeof PrefsError.Type, 'code', Code>
+    nativeStackAndroid: Option.none(),
+    nativeStackIOS: Option.none(),
+    domain: Option.none(),
+  }) as Discriminated<PrefsError, 'code', Code>
 
 // NOTE: The React Native bridge stringifies all objects anyway; we just do it manually so we can take advantage of Swift.Codable and kotlinx.serialization to simplify the native code
 // FIXME: Also validate that output is a string?
 export const getPref = (
   key: string
-): E.Effect<
-  O.Option<string>,
+): Effect.Effect<
+  Option.Option<string>,
   Discriminated<
-    typeof PrefsError.Type,
+    PrefsError,
     'code',
     | '@candlefinance.prefs.unexpected'
+    | '@candlefinance.prefs.non_string_value'
     | '@candlefinance.prefs.unknown_error_response_schema'
   >
 > =>
   pipe(
-    E.tryPromise({
+    Effect.tryPromise({
       try: () => prefsNativeModule.getPref(key),
       catch: (error) =>
         pipe(
           error,
-          S.decodeUnknownEither(PrefsError),
+          Schema.decodeUnknownEither(PrefsError),
           Either.getRight,
-          O.flatMap(
+          Option.flatMap(
             oLiftRefinement(
-              discriminateA('code', ['@candlefinance.prefs.unexpected'])
+              discriminateA('code', [
+                '@candlefinance.prefs.unexpected',
+                '@candlefinance.prefs.non_string_value',
+              ])
             )
           ),
-          O.getOrElse(() =>
+          Option.getOrElse(() =>
             makeError(
               error,
               '@candlefinance.prefs.unknown_error_response_schema'
@@ -97,30 +102,30 @@ export const getPref = (
           )
         ),
     }),
-    E.map(O.fromNullable)
+    Effect.map(Option.fromNullable)
   )
 
 export const setPref = (
   key: string,
   value: string
-): E.Effect<void, typeof PrefsError.Type> =>
+): Effect.Effect<void, PrefsError> =>
   pipe(
-    E.tryPromise({
+    Effect.tryPromise({
       try: () => prefsNativeModule.setPref(key, value),
       catch: (error) =>
         pipe(
           error,
-          S.decodeUnknownEither(PrefsError),
+          Schema.decodeUnknownEither(PrefsError),
           Either.getRight,
-          O.flatMap(
+          Option.flatMap(
             oLiftRefinement(
               discriminateA('code', [
                 '@candlefinance.prefs.unexpected',
-                '@candlefinance.prefs.edit_commit_failed',
+                '@candlefinance.prefs.write_failed',
               ])
             )
           ),
-          O.getOrElse(() =>
+          Option.getOrElse(() =>
             makeError(
               error,
               '@candlefinance.prefs.unknown_error_response_schema'
@@ -130,26 +135,24 @@ export const setPref = (
     })
   )
 
-export const deletePref = (
-  key: string
-): E.Effect<void, typeof PrefsError.Type> =>
+export const deletePref = (key: string): Effect.Effect<void, PrefsError> =>
   pipe(
-    E.tryPromise({
+    Effect.tryPromise({
       try: () => prefsNativeModule.deletePref(key),
       catch: (error) =>
         pipe(
           error,
-          S.decodeUnknownEither(PrefsError),
+          Schema.decodeUnknownEither(PrefsError),
           Either.getRight,
-          O.flatMap(
+          Option.flatMap(
             oLiftRefinement(
               discriminateA('code', [
                 '@candlefinance.prefs.unexpected',
-                '@candlefinance.prefs.edit_commit_failed',
+                '@candlefinance.prefs.write_failed',
               ])
             )
           ),
-          O.getOrElse(() =>
+          Option.getOrElse(() =>
             makeError(
               error,
               '@candlefinance.prefs.unknown_error_response_schema'

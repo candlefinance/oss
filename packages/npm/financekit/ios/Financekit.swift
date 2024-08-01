@@ -41,15 +41,15 @@ var authorizationStatus: String {
     }
 }
 
-class UnknownAuthorizationStatusError : Error {
+final class UnknownAuthorizationStatusError : Error {
     let message : String = MESSAGE_UNKNOWN_AUTHORIZATION_STATUS
 }
 
-class UnknownAccountTypeError : Error {
+final class UnknownAccountTypeError : Error {
     let message : String = MESSAGE_UNKNOWN_ACCOUNT_TYPE
 }
 
-class UnknownCurrentBalanceTypeError : Error {
+final class UnknownCurrentBalanceTypeError : Error {
     let message : String = MESSAGE_UNKNOWN_CURRENT_BALANCE_TYPE
 }
 
@@ -142,7 +142,7 @@ struct CandleCurrentBalance : Encodable {
 }
 
 @objc(Financekit)
-class Financekit: NSObject {
+final class Financekit: NSObject {
 
     private let jsonEncoder = JSONEncoder()
     override init() {

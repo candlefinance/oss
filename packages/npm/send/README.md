@@ -1,5 +1,4 @@
 <br/>
-
 <div align="center">
   <a href="https://www.npmjs.com/package/@candlefinance/send">
   <img src="https://img.shields.io/npm/dm/@candlefinance/send" alt="npm downloads" />
@@ -9,18 +8,22 @@
   rel="noopener noreferrer">
     <img alt="discord users online" src="https://img.shields.io/discord/986610142768406548?label=Discord&logo=discord&logoColor=white&cacheSeconds=3600"/>
 </div>
-
 <br/>
-
 <h1 align="center">
    Send
 </h1>
 
 Uses URLSession on iOS and OkHttp on Android to provide a fast, low-level networking layer for React Native.
 
-<br/>
-
 ## Installation
+
+To install `send` with **npm**:
+
+```sh
+npm install @candlefinance/send
+```
+
+To install `send` with **yarn**:
 
 ```sh
 yarn add @candlefinance/send
@@ -29,7 +32,7 @@ yarn add @candlefinance/send
 ## Usage
 
 ```js
-import { send } from '@candlefinance/send';
+import { send } from '@candlefinance/send'
 
 const response = await send({
   baseURL: 'https://itunes.apple.com',
@@ -46,7 +49,7 @@ const response = await send({
     'Content-Type': 'application/json',
     'Accept': 'application/json',
   },
-});
+})
 ```
 
 ## Contributing
