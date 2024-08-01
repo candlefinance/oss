@@ -1,11 +1,30 @@
 import * as prefs from '.'
-import { Effect as E, Option as O } from 'effect'
+import { Effect, Option, Either, identity } from 'effect'
 
 export const getPref = (key: string): Promise<string | undefined> =>
-  E.runPromise(prefs.getPref(key).pipe(E.map(O.getOrUndefined)))
+  prefs
+    .getPref(key)
+    .pipe(
+      Effect.map(Option.getOrUndefined),
+      Effect.either,
+      Effect.map(Either.getOrThrowWith(identity)),
+      Effect.runPromise
+    )
 
 export const setPref = (key: string, value: string): Promise<void> =>
-  E.runPromise(prefs.setPref(key, value))
+  prefs
+    .setPref(key, value)
+    .pipe(
+      Effect.either,
+      Effect.map(Either.getOrThrowWith(identity)),
+      Effect.runPromise
+    )
 
 export const deletePref = (key: string): Promise<void> =>
-  E.runPromise(prefs.deletePref(key))
+  prefs
+    .deletePref(key)
+    .pipe(
+      Effect.either,
+      Effect.map(Either.getOrThrowWith(identity)),
+      Effect.runPromise
+    )

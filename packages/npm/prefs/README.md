@@ -14,22 +14,17 @@ This package is designed for usage with [Effect](https://effect.website), but al
 
 To use `prefs` **with** Effect, import `@candlefinance/prefs`. Sample code is available in the [example app](example/src/App.tsx/).
 
-To use `prefs` **without** Effect, import `@candlefinance/prefs/promises`. Sample code:
+To use `prefs` **without** Effect, import `@candlefinance/prefs/promises`. Functions throw a `PrefError` on unexpected issues.
 
 ```ts
 import { Effect, Option } from 'effect'
 import { getPref, setPref, deletePref } from '@candlefinance/prefs/promises'
 
-// SET A VALUE...
-// Throws on unexpected errors
 await setPref('themeColor', 'black')
 
-// GET A VALUE...
-// Returns `string | undefined`. Throws on unexpected errors.
+// string | undefined
 const themeColor = await getPref('themeColor')
 
-// DELETE A VALUE...
-// Throws on unexpected errors
 await deletePref('themeColor')
 ```
 
@@ -37,7 +32,7 @@ await deletePref('themeColor')
 
 - SharedPreferences on Android does not expose a default app-wide instance (like UserDefaults on iOS). To a) access prefs saved using this library from native Android code, or b) write prefs from native Android code and then access them using this library, initialize SharedPreferences in your native Android code with the file name `com.candlefinance.prefs`.
 
-- Both SharedPreferences and UserDefaults support saving various data types including strings, arrays, and numbers. This library only supports saving and retrieving string values. If you attempt to retrieve a non-string value set via native code, this library will return an error with the code `@candlefinance.prefs.non_string_value`.
+- Both SharedPreferences and UserDefaults support saving various data types including strings, arrays, and numbers. This library only supports saving and retrieving string values. If you attempt to retrieve a non-string value set via native code, this library will return a PrefError with the code `@candlefinance.prefs.non_string_value`.
 
 ## Contributing
 
