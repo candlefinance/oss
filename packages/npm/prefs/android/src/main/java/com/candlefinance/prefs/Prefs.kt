@@ -41,7 +41,7 @@ class PrefsModule(reactContext: ReactApplicationContext) :
         promise.resolve(null)
       } else {
         promise.reject(
-          CODE_EDIT_COMMIT_FAILED, MESSAGE_EDIT_COMMIT_FAILED, Exception()
+          CODE_WRITE_FAILED, MESSAGE_WRITE_FAILED, Exception()
         )
       }
     } catch (e: Exception) {
@@ -62,7 +62,7 @@ class PrefsModule(reactContext: ReactApplicationContext) :
         promise.resolve(null)
       } else {
         promise.reject(
-          CODE_EDIT_COMMIT_FAILED, MESSAGE_EDIT_COMMIT_FAILED, Exception()
+          CODE_WRITE_FAILED, MESSAGE_WRITE_FAILED, Exception()
         )
       }
     } catch (e: Exception) {
@@ -75,11 +75,11 @@ class PrefsModule(reactContext: ReactApplicationContext) :
   companion object {
     const val NAME = "Prefs"
 
-    const val CODE_EDIT_COMMIT_FAILED = "@candlefinance.prefs.edit_commit_failed"
+    const val CODE_WRITE_FAILED = "@candlefinance.prefs.write_failed"
     const val CODE_NON_STRING_VALUE = "@candlefinance.prefs.non_string_value"
     const val CODE_UNEXPECTED = "@candlefinance.prefs.unexpected"
 
-    const val MESSAGE_EDIT_COMMIT_FAILED =
+    const val MESSAGE_WRITE_FAILED =
       "SharedPreferences edit could not be committed. Please file an issue on GitHub or try again."
     const val MESSAGE_NON_STRING_VALUE =
       "SharedPreferences value was found, but is not a string. You can use deletePref() to remove the existing value and try again. If you're setting this value from native Android code, make sure to use putString()."

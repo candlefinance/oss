@@ -154,14 +154,14 @@ struct Response: Encodable {
     }
 }
 
-class IgnoreRedirectsDelegate: NSObject, URLSessionTaskDelegate {
+final class IgnoreRedirectsDelegate: NSObject, URLSessionTaskDelegate {
     func urlSession(_ session: URLSession, task: URLSessionTask, willPerformHTTPRedirection response: HTTPURLResponse, newRequest request: URLRequest) async -> URLRequest? {
         return nil
     }
 }
 
 @objc(Send)
-class Send: NSObject {
+final class Send: NSObject {
     let session = URLSession(configuration: .default, delegate: IgnoreRedirectsDelegate(), delegateQueue: nil)
     
     @objc(send:withResolver:withRejecter:)

@@ -44,7 +44,7 @@ export class PrefsError extends Schema.Class<PrefsError>('PrefsError')({
   domain: Schema.OptionFromUndefinedOr(Schema.String),
   message: Schema.String,
   code: Schema.Literal(
-    '@candlefinance.prefs.edit_commit_failed',
+    '@candlefinance.prefs.write_failed',
     '@candlefinance.prefs.non_string_value',
     '@candlefinance.prefs.unexpected',
     '@candlefinance.prefs.unknown_error_response_schema'
@@ -121,7 +121,7 @@ export const setPref = (
             oLiftRefinement(
               discriminateA('code', [
                 '@candlefinance.prefs.unexpected',
-                '@candlefinance.prefs.edit_commit_failed',
+                '@candlefinance.prefs.write_failed',
               ])
             )
           ),
@@ -148,7 +148,7 @@ export const deletePref = (key: string): Effect.Effect<void, PrefsError> =>
             oLiftRefinement(
               discriminateA('code', [
                 '@candlefinance.prefs.unexpected',
-                '@candlefinance.prefs.edit_commit_failed',
+                '@candlefinance.prefs.write_failed',
               ])
             )
           ),
