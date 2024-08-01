@@ -45,6 +45,7 @@ export const PrefsError = S.Struct({
   message: S.String,
   code: S.Literal(
     '@candlefinance.prefs.edit_commit_failed',
+    '@candlefinance.prefs.non_string_value',
     '@candlefinance.prefs.unexpected',
     '@candlefinance.prefs.unknown_error_response_schema'
   ),
@@ -73,6 +74,7 @@ export const getPref = (
     typeof PrefsError.Type,
     'code',
     | '@candlefinance.prefs.unexpected'
+    | '@candlefinance.prefs.non_string_value'
     | '@candlefinance.prefs.unknown_error_response_schema'
   >
 > =>
@@ -86,7 +88,10 @@ export const getPref = (
           Either.getRight,
           O.flatMap(
             oLiftRefinement(
-              discriminateA('code', ['@candlefinance.prefs.unexpected'])
+              discriminateA('code', [
+                '@candlefinance.prefs.unexpected',
+                '@candlefinance.prefs.non_string_value',
+              ])
             )
           ),
           O.getOrElse(() =>
