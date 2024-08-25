@@ -1,4 +1,4 @@
-package com.sendexample
+package candlefinance.send.example
 
 import com.facebook.react.ReactActivity
 import com.facebook.react.ReactActivityDelegate
