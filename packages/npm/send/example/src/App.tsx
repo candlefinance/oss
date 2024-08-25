@@ -28,6 +28,7 @@ const App = () => {
     artistName: string
     artworkUrl100: string
     description: string
+    version: string
     screenshotUrls: string[]
   } | null>()
 
@@ -70,6 +71,7 @@ const App = () => {
       <ScrollView style={styles.container}>
         <Text style={styles.title}>{data.trackName}</Text>
         <Text style={styles.artist}>{data.artistName}</Text>
+        <Text style={styles.description}>v{data.version}</Text>
         <Image source={{ uri: data.artworkUrl100 }} style={styles.icon} />
         <Text style={styles.description}>
           {data.description.slice(0, 299)}...
@@ -104,6 +106,8 @@ const styles = StyleSheet.create({
     marginBottom: 8,
   },
   icon: {
+    borderRadius: 24,
+    borderCurve: 'continuous',
     width: 100,
     height: 100,
     marginBottom: 16,
@@ -113,6 +117,8 @@ const styles = StyleSheet.create({
     marginBottom: 16,
   },
   screenshot: {
+    borderRadius: 24,
+    borderCurve: 'continuous',
     width: 200,
     height: 400,
     marginRight: 8,
