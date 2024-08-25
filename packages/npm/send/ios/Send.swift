@@ -1,3 +1,5 @@
+import Foundation
+
 private let CODE_REQUEST_INVALID = "@candlefinance.send.request_invalid"
 private let CODE_NO_RESPONSE = "@candlefinance.send.no_response"
 private let CODE_RESPONSE_INVALID = "@candlefinance.send.response_invalid"
@@ -160,11 +162,10 @@ final class IgnoreRedirectsDelegate: NSObject, URLSessionTaskDelegate {
     }
 }
 
-@objc(Send)
-final class Send: NSObject {
+@objcMembers
+final class SendSwift: NSObject {
     let session = URLSession(configuration: .default, delegate: IgnoreRedirectsDelegate(), delegateQueue: nil)
     
-    @objc(send:withResolver:withRejecter:)
     @available(iOS 15.0, *)
     func send(
         stringifiedRequest: String,
