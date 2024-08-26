@@ -20,6 +20,9 @@ private func bodyIsUTF8(contentTypeHeader: String?, utf8ContentTypes: [String]) 
     return utf8ContentTypes.contains(String(contentType))
 }
 
+public typealias ResolveBlock<T> = (T?) -> Void
+public typealias RejectBlock = (String, String?, Error?) -> Void
+
 enum SendError: Error {
     case nonBase64RequestBody
     
@@ -162,15 +165,29 @@ final class IgnoreRedirectsDelegate: NSObject, URLSessionTaskDelegate {
     }
 }
 
+final class NetworkManager {
+    static let shared = NetworkManager()
+
+    lazy var session: URLSession = {
+        return URLSession(
+            configuration: .default,
+            delegate: IgnoreRedirectsDelegate(),
+            delegateQueue: nil
+        )
+    }()
+
+    private init() {}
+}
+
 @objcMembers
-final class SendSwift: NSObject {
-    let session = URLSession(configuration: .default, delegate: IgnoreRedirectsDelegate(), delegateQueue: nil)
+public final class SendSwift: NSObject {
+    lazy var session = NetworkManager.shared.session
     
     @available(iOS 15.0, *)
-    func send(
+    public func send(
         stringifiedRequest: String,
-        resolve: @escaping RCTPromiseResolveBlock,
-        reject: @escaping RCTPromiseRejectBlock
+        resolve: @escaping ResolveBlock<String>,
+        reject: @escaping RejectBlock
     ) {
         Task {
             do {
