@@ -32,8 +32,8 @@ extension Request {
         }
         urlComponents.path = path
         
-        if !queryParameters.isEmpty {
-            urlComponents.queryItems = queryParameters.map { key, value in
+        if !query.parameters.isEmpty {
+            urlComponents.queryItems = query.parameters.map { key, value in
                 URLQueryItem(name: key, value: value)
             }
         }
@@ -49,12 +49,12 @@ extension Request {
             var urlRequest = URLRequest(url: url)
             urlRequest.httpMethod = String(describing: method)
             
-            for (key, value) in headerParameters {
+            for (key, value) in header.parameters {
                 urlRequest.setValue(value, forHTTPHeaderField: key)
             }
             
             if let body {
-                let contentTypeHeader = headerParameters.first(where: { $0.key.caseInsensitiveCompare("Content-Type") == .orderedSame })?.value
+                let contentTypeHeader = header.parameters.first(where: { $0.key.caseInsensitiveCompare("Content-Type") == .orderedSame })?.value
                 if bodyIsUTF8(contentTypeHeader: contentTypeHeader, utf8ContentTypes: utf8ContentTypes) {
                     guard let utf8Body = body.data(using: .utf8) else {
                         return .failure(.nonUTF8RequestBody)
@@ -96,7 +96,7 @@ extension Response {
         }
         self.init(
             statusCode: Double(httpURLResponse.statusCode),
-            headerParameters: headerParameters,
+            header: Parameters(parameters: headerParameters),
             body: body
         )
     }
@@ -153,13 +153,14 @@ final class Send: HybridSendSpec {
                 throw SendError.nonUTF8ResponseBody
             }
             
-        } catch let decodingError as DecodingError {
+        } catch let _ as DecodingError {
             throw SendError.nonUTF8ResponseBody
             
-        } catch let encodingError as EncodingError {
+        } catch let _ as EncodingError {
             throw SendError.nonUTF8ResponseBody
             
         } catch let urlError as URLError {
+            print(urlError)
             switch (urlError.code) {
             case .appTransportSecurityRequiresSecureConnection,
                     .badURL,
@@ -218,7 +219,7 @@ final class Send: HybridSendSpec {
                 // NOTE: The only other documented case is `unknown`, but code is not an enum so a default case is required regardless
                 throw SendError.nonUTF8ResponseBody
             }
-        } catch let error {
+        } catch _ {
             throw SendError.nonUTF8ResponseBody
         }
     }

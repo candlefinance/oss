@@ -19,11 +19,12 @@
 #error NitroModules cannot be found! Are you sure you installed NitroModules properly?
 #endif
 
+// Forward declaration of `Parameters` to properly resolve imports.
+namespace margelo::nitro::send { struct Parameters; }
 
-
-#include <unordered_map>
-#include <string>
+#include "Parameters.hpp"
 #include <optional>
+#include <string>
 
 namespace margelo::nitro::send {
 
@@ -33,11 +34,11 @@ namespace margelo::nitro::send {
   struct Response {
   public:
     double statusCode     SWIFT_PRIVATE;
-    std::unordered_map<std::string, std::string> headerParameters     SWIFT_PRIVATE;
+    Parameters header     SWIFT_PRIVATE;
     std::optional<std::string> body     SWIFT_PRIVATE;
 
   public:
-    explicit Response(double statusCode, std::unordered_map<std::string, std::string> headerParameters, std::optional<std::string> body): statusCode(statusCode), headerParameters(headerParameters), body(body) {}
+    explicit Response(double statusCode, Parameters header, std::optional<std::string> body): statusCode(statusCode), header(header), body(body) {}
   };
 
 } // namespace margelo::nitro::send
@@ -53,14 +54,14 @@ namespace margelo::nitro {
       jsi::Object obj = arg.asObject(runtime);
       return Response(
         JSIConverter<double>::fromJSI(runtime, obj.getProperty(runtime, "statusCode")),
-        JSIConverter<std::unordered_map<std::string, std::string>>::fromJSI(runtime, obj.getProperty(runtime, "headerParameters")),
+        JSIConverter<Parameters>::fromJSI(runtime, obj.getProperty(runtime, "header")),
         JSIConverter<std::optional<std::string>>::fromJSI(runtime, obj.getProperty(runtime, "body"))
       );
     }
     static inline jsi::Value toJSI(jsi::Runtime& runtime, const Response& arg) {
       jsi::Object obj(runtime);
       obj.setProperty(runtime, "statusCode", JSIConverter<double>::toJSI(runtime, arg.statusCode));
-      obj.setProperty(runtime, "headerParameters", JSIConverter<std::unordered_map<std::string, std::string>>::toJSI(runtime, arg.headerParameters));
+      obj.setProperty(runtime, "header", JSIConverter<Parameters>::toJSI(runtime, arg.header));
       obj.setProperty(runtime, "body", JSIConverter<std::optional<std::string>>::toJSI(runtime, arg.body));
       return obj;
     }
@@ -70,7 +71,7 @@ namespace margelo::nitro {
       }
       jsi::Object obj = value.getObject(runtime);
       if (!JSIConverter<double>::canConvert(runtime, obj.getProperty(runtime, "statusCode"))) return false;
-      if (!JSIConverter<std::unordered_map<std::string, std::string>>::canConvert(runtime, obj.getProperty(runtime, "headerParameters"))) return false;
+      if (!JSIConverter<Parameters>::canConvert(runtime, obj.getProperty(runtime, "header"))) return false;
       if (!JSIConverter<std::optional<std::string>>::canConvert(runtime, obj.getProperty(runtime, "body"))) return false;
       return true;
     }

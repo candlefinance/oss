@@ -11,11 +11,15 @@ export type Method =
   | 'CONNECT'
   | 'TRACE'
 
+interface Parameters {
+  parameters: Record<string, string>
+}
+
 export interface Request {
   baseURL: string
   path: string
-  queryParameters: Record<string, string>
-  headerParameters: Record<string, string>
+  query: Parameters
+  header: Parameters
   method: Method
   body: string | null
   utf8ContentTypes: string[]
@@ -23,7 +27,7 @@ export interface Request {
 
 export interface Response {
   statusCode: number
-  headerParameters: Record<string, string>
+  header: Parameters
   body: string | null
 }
 

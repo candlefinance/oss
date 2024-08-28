@@ -25,5 +25,7 @@ Pod::Spec.new do |s|
 
   load './nitrogen/generated/ios/candlefinance_send+autolinking.rb'
   add_nitrogen_files(s)
+  install_modules_dependencies(s)
+
 
 end

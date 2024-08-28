@@ -19,11 +19,13 @@
 #error NitroModules cannot be found! Are you sure you installed NitroModules properly?
 #endif
 
+// Forward declaration of `Parameters` to properly resolve imports.
+namespace margelo::nitro::send { struct Parameters; }
 // Forward declaration of `Method` to properly resolve imports.
 namespace margelo::nitro::send { enum class Method; }
 
 #include <string>
-#include <unordered_map>
+#include "Parameters.hpp"
 #include "Method.hpp"
 #include <optional>
 #include <vector>
@@ -37,14 +39,14 @@ namespace margelo::nitro::send {
   public:
     std::string baseURL     SWIFT_PRIVATE;
     std::string path     SWIFT_PRIVATE;
-    std::unordered_map<std::string, std::string> queryParameters     SWIFT_PRIVATE;
-    std::unordered_map<std::string, std::string> headerParameters     SWIFT_PRIVATE;
+    Parameters query     SWIFT_PRIVATE;
+    Parameters header     SWIFT_PRIVATE;
     Method method     SWIFT_PRIVATE;
     std::optional<std::string> body     SWIFT_PRIVATE;
     std::vector<std::string> utf8ContentTypes     SWIFT_PRIVATE;
 
   public:
-    explicit Request(std::string baseURL, std::string path, std::unordered_map<std::string, std::string> queryParameters, std::unordered_map<std::string, std::string> headerParameters, Method method, std::optional<std::string> body, std::vector<std::string> utf8ContentTypes): baseURL(baseURL), path(path), queryParameters(queryParameters), headerParameters(headerParameters), method(method), body(body), utf8ContentTypes(utf8ContentTypes) {}
+    explicit Request(std::string baseURL, std::string path, Parameters query, Parameters header, Method method, std::optional<std::string> body, std::vector<std::string> utf8ContentTypes): baseURL(baseURL), path(path), query(query), header(header), method(method), body(body), utf8ContentTypes(utf8ContentTypes) {}
   };
 
 } // namespace margelo::nitro::send
@@ -61,8 +63,8 @@ namespace margelo::nitro {
       return Request(
         JSIConverter<std::string>::fromJSI(runtime, obj.getProperty(runtime, "baseURL")),
         JSIConverter<std::string>::fromJSI(runtime, obj.getProperty(runtime, "path")),
-        JSIConverter<std::unordered_map<std::string, std::string>>::fromJSI(runtime, obj.getProperty(runtime, "queryParameters")),
-        JSIConverter<std::unordered_map<std::string, std::string>>::fromJSI(runtime, obj.getProperty(runtime, "headerParameters")),
+        JSIConverter<Parameters>::fromJSI(runtime, obj.getProperty(runtime, "query")),
+        JSIConverter<Parameters>::fromJSI(runtime, obj.getProperty(runtime, "header")),
         JSIConverter<Method>::fromJSI(runtime, obj.getProperty(runtime, "method")),
         JSIConverter<std::optional<std::string>>::fromJSI(runtime, obj.getProperty(runtime, "body")),
         JSIConverter<std::vector<std::string>>::fromJSI(runtime, obj.getProperty(runtime, "utf8ContentTypes"))
@@ -72,8 +74,8 @@ namespace margelo::nitro {
       jsi::Object obj(runtime);
       obj.setProperty(runtime, "baseURL", JSIConverter<std::string>::toJSI(runtime, arg.baseURL));
       obj.setProperty(runtime, "path", JSIConverter<std::string>::toJSI(runtime, arg.path));
-      obj.setProperty(runtime, "queryParameters", JSIConverter<std::unordered_map<std::string, std::string>>::toJSI(runtime, arg.queryParameters));
-      obj.setProperty(runtime, "headerParameters", JSIConverter<std::unordered_map<std::string, std::string>>::toJSI(runtime, arg.headerParameters));
+      obj.setProperty(runtime, "query", JSIConverter<Parameters>::toJSI(runtime, arg.query));
+      obj.setProperty(runtime, "header", JSIConverter<Parameters>::toJSI(runtime, arg.header));
       obj.setProperty(runtime, "method", JSIConverter<Method>::toJSI(runtime, arg.method));
       obj.setProperty(runtime, "body", JSIConverter<std::optional<std::string>>::toJSI(runtime, arg.body));
       obj.setProperty(runtime, "utf8ContentTypes", JSIConverter<std::vector<std::string>>::toJSI(runtime, arg.utf8ContentTypes));
@@ -86,8 +88,8 @@ namespace margelo::nitro {
       jsi::Object obj = value.getObject(runtime);
       if (!JSIConverter<std::string>::canConvert(runtime, obj.getProperty(runtime, "baseURL"))) return false;
       if (!JSIConverter<std::string>::canConvert(runtime, obj.getProperty(runtime, "path"))) return false;
-      if (!JSIConverter<std::unordered_map<std::string, std::string>>::canConvert(runtime, obj.getProperty(runtime, "queryParameters"))) return false;
-      if (!JSIConverter<std::unordered_map<std::string, std::string>>::canConvert(runtime, obj.getProperty(runtime, "headerParameters"))) return false;
+      if (!JSIConverter<Parameters>::canConvert(runtime, obj.getProperty(runtime, "query"))) return false;
+      if (!JSIConverter<Parameters>::canConvert(runtime, obj.getProperty(runtime, "header"))) return false;
       if (!JSIConverter<Method>::canConvert(runtime, obj.getProperty(runtime, "method"))) return false;
       if (!JSIConverter<std::optional<std::string>>::canConvert(runtime, obj.getProperty(runtime, "body"))) return false;
       if (!JSIConverter<std::vector<std::string>>::canConvert(runtime, obj.getProperty(runtime, "utf8ContentTypes"))) return false;

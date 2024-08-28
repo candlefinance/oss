@@ -19,14 +19,8 @@ public extension Response {
   /**
    * Create a new instance of `Response`.
    */
-  init(statusCode: Double, headerParameters: Dictionary<String, String>, body: String?) {
-    self.init(statusCode, { () -> bridge.std__unordered_map_std__string__std__string_ in
-      var map = bridge.create_std__unordered_map_std__string__std__string_(headerParameters.count)
-      for (k, v) in headerParameters {
-        map[std.string(k)] = std.string(v)
-      }
-      return map
-    }(), { () -> bridge.std__optional_std__string_ in
+  init(statusCode: Double, header: Parameters, body: String?) {
+    self.init(statusCode, header, { () -> bridge.std__optional_std__string_ in
       if let actualValue = body {
         return bridge.create_std__optional_std__string_(std.string(actualValue))
       } else {
@@ -46,28 +40,14 @@ public extension Response {
     }
   }
   
-  var headerParameters: Dictionary<String, String> {
+  var header: Parameters {
     @inline(__always)
     get {
-      return { () -> Dictionary<String, String> in
-        var dictionary = Dictionary<String, String>(minimumCapacity: self.__headerParameters.size())
-        let keys = bridge.get_std__unordered_map_std__string__std__string__keys(self.__headerParameters)
-        for key in keys {
-          let value = self.__headerParameters[key]
-          dictionary[String(key)] = String(value!)
-        }
-        return dictionary
-      }()
+      return self.__header
     }
     @inline(__always)
     set {
-      self.__headerParameters = { () -> bridge.std__unordered_map_std__string__std__string_ in
-        var map = bridge.create_std__unordered_map_std__string__std__string_(newValue.count)
-        for (k, v) in newValue {
-          map[std.string(k)] = std.string(v)
-        }
-        return map
-      }()
+      self.__header = newValue
     }
   }
   

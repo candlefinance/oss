@@ -15,6 +15,8 @@ namespace candlefinance_send { class HybridSendSpecCxx; }
 
 // Forward declaration of `Response` to properly resolve imports.
 namespace margelo::nitro::send { struct Response; }
+// Forward declaration of `Parameters` to properly resolve imports.
+namespace margelo::nitro::send { struct Parameters; }
 // Forward declaration of `Request` to properly resolve imports.
 namespace margelo::nitro::send { struct Request; }
 // Forward declaration of `Method` to properly resolve imports.
@@ -23,6 +25,7 @@ namespace margelo::nitro::send { enum class Method; }
 #include <future>
 #include "Response.hpp"
 #include <NitroModules/PromiseHolder.hpp>
+#include "Parameters.hpp"
 #include <unordered_map>
 #include <string>
 #include <optional>

@@ -38,16 +38,20 @@ const App = () => {
       baseURL: 'https://itunes.apple.com',
       method: 'GET',
       path: '/lookup',
-      queryParameters: {
-        bundleId: 'com.trycandle.candle',
-        country: 'US',
+      query: {
+        parameters: {
+          bundleId: 'com.trycandle.candle',
+          country: 'US',
+        },
       },
       body: null,
       utf8ContentTypes: ['application/json', 'text/html', 'text/javascript'],
-      headerParameters: {
-        'Cache-Control': 'no-cache',
-        'Content-Type': 'application/json',
-        'Accept': 'application/json',
+      header: {
+        parameters: {
+          'Cache-Control': 'no-cache',
+          'Content-Type': 'application/json',
+          'Accept': 'application/json',
+        },
       },
     })
       .then((response) => {

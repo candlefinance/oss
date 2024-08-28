@@ -19,20 +19,8 @@ public extension Request {
   /**
    * Create a new instance of `Request`.
    */
-  init(baseURL: String, path: String, queryParameters: Dictionary<String, String>, headerParameters: Dictionary<String, String>, method: Method, body: String?, utf8ContentTypes: [String]) {
-    self.init(std.string(baseURL), std.string(path), { () -> bridge.std__unordered_map_std__string__std__string_ in
-      var map = bridge.create_std__unordered_map_std__string__std__string_(queryParameters.count)
-      for (k, v) in queryParameters {
-        map[std.string(k)] = std.string(v)
-      }
-      return map
-    }(), { () -> bridge.std__unordered_map_std__string__std__string_ in
-      var map = bridge.create_std__unordered_map_std__string__std__string_(headerParameters.count)
-      for (k, v) in headerParameters {
-        map[std.string(k)] = std.string(v)
-      }
-      return map
-    }(), method, { () -> bridge.std__optional_std__string_ in
+  init(baseURL: String, path: String, query: Parameters, header: Parameters, method: Method, body: String?, utf8ContentTypes: [String]) {
+    self.init(std.string(baseURL), std.string(path), query, header, method, { () -> bridge.std__optional_std__string_ in
       if let actualValue = body {
         return bridge.create_std__optional_std__string_(std.string(actualValue))
       } else {
@@ -69,53 +57,25 @@ public extension Request {
     }
   }
   
-  var queryParameters: Dictionary<String, String> {
+  var query: Parameters {
     @inline(__always)
     get {
-      return { () -> Dictionary<String, String> in
-        var dictionary = Dictionary<String, String>(minimumCapacity: self.__queryParameters.size())
-        let keys = bridge.get_std__unordered_map_std__string__std__string__keys(self.__queryParameters)
-        for key in keys {
-          let value = self.__queryParameters[key]
-          dictionary[String(key)] = String(value!)
-        }
-        return dictionary
-      }()
+      return self.__query
     }
     @inline(__always)
     set {
-      self.__queryParameters = { () -> bridge.std__unordered_map_std__string__std__string_ in
-        var map = bridge.create_std__unordered_map_std__string__std__string_(newValue.count)
-        for (k, v) in newValue {
-          map[std.string(k)] = std.string(v)
-        }
-        return map
-      }()
+      self.__query = newValue
     }
   }
   
-  var headerParameters: Dictionary<String, String> {
+  var header: Parameters {
     @inline(__always)
     get {
-      return { () -> Dictionary<String, String> in
-        var dictionary = Dictionary<String, String>(minimumCapacity: self.__headerParameters.size())
-        let keys = bridge.get_std__unordered_map_std__string__std__string__keys(self.__headerParameters)
-        for key in keys {
-          let value = self.__headerParameters[key]
-          dictionary[String(key)] = String(value!)
-        }
-        return dictionary
-      }()
+      return self.__header
     }
     @inline(__always)
     set {
-      self.__headerParameters = { () -> bridge.std__unordered_map_std__string__std__string_ in
-        var map = bridge.create_std__unordered_map_std__string__std__string_(newValue.count)
-        for (k, v) in newValue {
-          map[std.string(k)] = std.string(v)
-        }
-        return map
-      }()
+      self.__header = newValue
     }
   }
   
