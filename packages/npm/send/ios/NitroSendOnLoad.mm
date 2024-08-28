@@ -15,10 +15,11 @@ class NitroSendRegistry;
 @implementation NitroSendOnLoad : NSObject
 
 using namespace margelo::nitro;
+using namespace candlefinance_send;
 
 + (void)load {
     HybridObjectRegistry::registerHybridObjectConstructor("Send", []() -> std::shared_ptr<HybridObject> {
-        auto obj = candlefinance_send::SendNitroRegistry::createSendObject();
+        auto obj = SendNitroRegistry::createSendObject();
         return std::make_shared<send::HybridSendSpecSwift>(obj);
     });
 }
