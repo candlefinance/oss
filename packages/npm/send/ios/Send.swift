@@ -1,4 +1,5 @@
 import Foundation
+import NitroModules
 
 private let CODE_REQUEST_INVALID = "@candlefinance.send.request_invalid"
 private let CODE_NO_RESPONSE = "@candlefinance.send.no_response"
@@ -167,7 +168,7 @@ final class IgnoreRedirectsDelegate: NSObject, URLSessionTaskDelegate {
 
 final class NetworkManager {
     static let shared = NetworkManager()
-
+    
     lazy var session: URLSession = {
         return URLSession(
             configuration: .default,
@@ -175,125 +176,133 @@ final class NetworkManager {
             delegateQueue: nil
         )
     }()
-
+    
     private init() {}
 }
 
-@objcMembers
-public final class SendSwift: NSObject {
+final class Send: HybridSendSpec {
+    
+    var hybridContext = margelo.nitro.HybridContext()
+    
+    var memorySize: Int {
+        return getSizeOf(self)
+    }
+    
     lazy var session = NetworkManager.shared.session
     
-    @available(iOS 15.0, *)
-    public func send(
-        stringifiedRequest: String,
-        resolve: @escaping ResolveBlock<String>,
-        reject: @escaping RejectBlock
-    ) {
-        Task {
-            do {
-                guard let requestData = stringifiedRequest.data(using: .utf8) else {
-                    return reject(CODE_REQUEST_INVALID, MESSAGE_REQUEST_INVALID, nil)
-                }
-                let request = try JSONDecoder().decode(Request.self, from: requestData)
-                let urlRequest = try request.urlRequest.get()
-                
-                let (data, urlResponse) = try await session.data(for: urlRequest)
-                guard let httpURLResponse = urlResponse as? HTTPURLResponse else {
-                    reject(CODE_RESPONSE_INVALID, MESSAGE_RESPONSE_INVALID, nil)
-                    return
-                }
-                let response = try Response(
-                    request: request,
-                    data: data,
-                    httpURLResponse: httpURLResponse
-                )
-                
-                let responseData = try JSONEncoder().encode(response)
-                guard let stringifiedResponse = String(data: responseData, encoding: .utf8) else {
-                    return reject(CODE_RESPONSE_INVALID, MESSAGE_RESPONSE_INVALID, nil)
-                }
-                resolve(stringifiedResponse)
-                
-            } catch let sendError as SendError {
-                switch (sendError) {
-                case .nonBase64RequestBody,
-                        .invalidRequestBaseURL,
-                        .nonUTF8RequestBody,
-                        .invalidRequestPathOrQueryParameters:
-                    reject(CODE_REQUEST_INVALID, sendError.message, sendError)
-                    
-                case .nonUTF8ResponseBody,
-                        .invalidResponseHeaderParameters:
-                    reject(CODE_RESPONSE_INVALID, sendError.message, sendError)
-                }
-                
-            } catch let decodingError as DecodingError {
-                reject(CODE_REQUEST_INVALID, decodingError.failureReason, decodingError)
-                
-            } catch let encodingError as EncodingError {
-                reject(CODE_RESPONSE_INVALID, encodingError.failureReason, encodingError)
-                
-            } catch let urlError as URLError {
-                switch (urlError.code) {
-                case .appTransportSecurityRequiresSecureConnection,
-                        .badURL,
-                        .cancelled,
-                        .cannotConnectToHost,
-                        .cannotFindHost,
-                        .clientCertificateRejected,
-                        .clientCertificateRequired,
-                        .dataLengthExceedsMaximum,
-                        .dataNotAllowed,
-                        .dnsLookupFailed,
-                        .fileDoesNotExist,
-                        .fileIsDirectory,
-                        .noPermissionsToReadFile,
-                        .requestBodyStreamExhausted,
-                        .unsupportedURL,
-                        .userAuthenticationRequired,
-                        .userCancelledAuthentication:
-                    reject(CODE_REQUEST_INVALID, MESSAGE_REQUEST_INVALID, urlError)
-                    
-                case  .callIsActive,
-                        .internationalRoamingOff,
-                        .networkConnectionLost,
-                        .notConnectedToInternet,
-                        .resourceUnavailable,
-                        .serverCertificateHasBadDate,
-                        .serverCertificateHasUnknownRoot,
-                        .serverCertificateNotYetValid,
-                        .serverCertificateUntrusted,
-                        .secureConnectionFailed,
-                        .timedOut,
-                        .appTransportSecurityRequiresSecureConnection:
-                    reject(CODE_NO_RESPONSE, MESSAGE_NO_RESPONSE, urlError)
-                    
-                case .backgroundSessionInUseByAnotherProcess,
-                        .backgroundSessionRequiresSharedContainer,
-                        .backgroundSessionWasDisconnected,
-                        .badServerResponse,
-                        .cannotCloseFile,
-                        .cannotCreateFile,
-                        .cannotDecodeContentData,
-                        .cannotDecodeRawData,
-                        .cannotMoveFile,
-                        .cannotOpenFile,
-                        .cannotParseResponse,
-                        .cannotRemoveFile,
-                        .cannotWriteToFile,
-                        .downloadDecodingFailedMidStream,
-                        .downloadDecodingFailedToComplete,
-                        .httpTooManyRedirects,
-                        .redirectToNonExistentLocation,
-                        .zeroByteResource:
-                    reject(CODE_RESPONSE_INVALID, MESSAGE_RESPONSE_INVALID, urlError)
-                    
-                default:
-                    // NOTE: The only other documented case is `unknown`, but code is not an enum so a default case is required regardless
-                    reject(CODE_UNKNOWN, MESSAGE_UNKNOWN, urlError)
-                }
-            } catch let error {
-                reject(CODE_UNKNOWN, MESSAGE_UNKNOWN, error)
+    func send(stringifiedRequest: String) async throws -> String {
+        do {
+            guard let requestData = stringifiedRequest.data(using: .utf8) else {
+                throw SendError.invalidRequestBaseURL
+            }
+            let request = try JSONDecoder().decode(Request.self, from: requestData)
+            let urlRequest = try request.urlRequest.get()
+            
+            let (data, urlResponse) = try await session.data(for: urlRequest)
+            guard let httpURLResponse = urlResponse as? HTTPURLResponse else {
+                throw SendError.nonBase64RequestBody
+            }
+            let response = try Response(
+                request: request,
+                data: data,
+                httpURLResponse: httpURLResponse
+            )
+            
+            let responseData = try JSONEncoder().encode(response)
+            guard let stringifiedResponse = String(data: responseData, encoding: .utf8) else {
+                throw SendError.nonUTF8RequestBody
+            }
+            return stringifiedResponse
+        } catch let sendError as SendError {
+            switch (sendError) {
+            case .nonBase64RequestBody,
+                    .invalidRequestBaseURL,
+                    .nonUTF8RequestBody,
+                    .invalidRequestPathOrQueryParameters:
+                throw SendError.nonUTF8RequestBody
+
+            case .nonUTF8ResponseBody,
+                    .invalidResponseHeaderParameters:
+                throw SendError.nonUTF8ResponseBody
+            }
+            
+        } catch let decodingError as DecodingError {
+            throw SendError.nonUTF8ResponseBody
+
+        } catch let encodingError as EncodingError {
+            throw SendError.nonUTF8ResponseBody
+
+        } catch let urlError as URLError {
+            switch (urlError.code) {
+            case .appTransportSecurityRequiresSecureConnection,
+                    .badURL,
+                    .cancelled,
+                    .cannotConnectToHost,
+                    .cannotFindHost,
+                    .clientCertificateRejected,
+                    .clientCertificateRequired,
+                    .dataLengthExceedsMaximum,
+                    .dataNotAllowed,
+                    .dnsLookupFailed,
+                    .fileDoesNotExist,
+                    .fileIsDirectory,
+                    .noPermissionsToReadFile,
+                    .requestBodyStreamExhausted,
+                    .unsupportedURL,
+                    .userAuthenticationRequired,
+                    .userCancelledAuthentication:
+                throw SendError.nonUTF8ResponseBody
+
+            case  .callIsActive,
+                    .internationalRoamingOff,
+                    .networkConnectionLost,
+                    .notConnectedToInternet,
+                    .resourceUnavailable,
+                    .serverCertificateHasBadDate,
+                    .serverCertificateHasUnknownRoot,
+                    .serverCertificateNotYetValid,
+                    .serverCertificateUntrusted,
+                    .secureConnectionFailed,
+                    .timedOut,
+                    .appTransportSecurityRequiresSecureConnection:
+                throw SendError.nonUTF8ResponseBody
+
+            case .backgroundSessionInUseByAnotherProcess,
+                    .backgroundSessionRequiresSharedContainer,
+                    .backgroundSessionWasDisconnected,
+                    .badServerResponse,
+                    .cannotCloseFile,
+                    .cannotCreateFile,
+                    .cannotDecodeContentData,
+                    .cannotDecodeRawData,
+                    .cannotMoveFile,
+                    .cannotOpenFile,
+                    .cannotParseResponse,
+                    .cannotRemoveFile,
+                    .cannotWriteToFile,
+                    .downloadDecodingFailedMidStream,
+                    .downloadDecodingFailedToComplete,
+                    .httpTooManyRedirects,
+                    .redirectToNonExistentLocation,
+                    .zeroByteResource:
+                throw SendError.nonUTF8ResponseBody
+
+            default:
+                // NOTE: The only other documented case is `unknown`, but code is not an enum so a default case is required regardless
+                throw SendError.nonUTF8ResponseBody
+            }
+        } catch let error {
+            throw SendError.nonUTF8ResponseBody
+        }
+    }
+    
+    
+    func send(request: String) throws -> NitroModules.Promise<String> {
+        return Promise.async { [weak self] in
+            if let self {
+                return try await self.send(stringifiedRequest: request)
+            } else {
+                throw SendError.nonUTF8ResponseBody
             }
         }
     }

@@ -1,4 +1,8 @@
-const Send = require('./NativeSend').default
+import { NitroModules } from 'react-native-nitro-modules'
+import type { Send } from './Send.nitro'
+export * from './Send.nitro'
+
+const Send = NitroModules.createHybridObject<Send>('Send')
 
 export type Request = {
   baseURL: string
@@ -26,7 +30,6 @@ export type Response = {
 }
 
 export async function send(request: Request): Promise<Response> {
-  // NOTE: The React Native bridge stringifies all objects anyway; we just do it manually so we can take advantage of Swift.Codable and kotlinx.serialization to simplify the native code
   const stringifiedRequest = JSON.stringify(request)
   const stringifiedResponse = await Send.send(stringifiedRequest)
   return JSON.parse(stringifiedResponse)
