@@ -13,11 +13,22 @@
 // Forward declaration of `HybridSendSpecCxx` to properly resolve imports.
 namespace candlefinance_send { class HybridSendSpecCxx; }
 
-
+// Forward declaration of `Response` to properly resolve imports.
+namespace margelo::nitro::send { struct Response; }
+// Forward declaration of `Request` to properly resolve imports.
+namespace margelo::nitro::send { struct Request; }
+// Forward declaration of `Method` to properly resolve imports.
+namespace margelo::nitro::send { enum class Method; }
 
 #include <future>
-#include <string>
+#include "Response.hpp"
 #include <NitroModules/PromiseHolder.hpp>
+#include <unordered_map>
+#include <string>
+#include <optional>
+#include "Request.hpp"
+#include "Method.hpp"
+#include <vector>
 
 #if __has_include(<NitroModules/HybridContext.hpp>)
 #include <NitroModules/HybridContext.hpp>
@@ -60,7 +71,7 @@ namespace margelo::nitro::send {
 
   public:
     // Methods
-    inline std::future<std::string> send(const std::string& request) override {
+    inline std::future<Response> send(const Request& request) override {
       auto value = _swiftPart.send(request);
       return value.getFuture();
     }

@@ -10,6 +10,7 @@ import {
 } from 'react-native'
 
 const serializeError = (error: unknown) => {
+  console.log('SERIALIZING ERROR', error, error instanceof Error)
   if (error instanceof Error) {
     return JSON.stringify({
       ...error,

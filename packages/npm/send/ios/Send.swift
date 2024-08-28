@@ -1,28 +1,12 @@
 import Foundation
 import NitroModules
 
-private let CODE_REQUEST_INVALID = "@candlefinance.send.request_invalid"
-private let CODE_NO_RESPONSE = "@candlefinance.send.no_response"
-private let CODE_RESPONSE_INVALID = "@candlefinance.send.response_invalid"
-private let CODE_UNKNOWN = "@candlefinance.send.unknown"
-
-private let MESSAGE_REQUEST_INVALID =
-"Your request is invalid. Please verify the format of your base URL and any other fields specified."
-private let MESSAGE_NO_RESPONSE =
-"Your request did not receive a response. Please verify your Internet connection."
-private let MESSAGE_RESPONSE_INVALID =
-"Your request received a response, but it couldn't be processed. Please verify the configuration of your server."
-private let MESSAGE_UNKNOWN = "Something went wrong. Please file an issue on GitHub or try again."
-
 private func bodyIsUTF8(contentTypeHeader: String?, utf8ContentTypes: [String]) -> Bool {
     guard let contentType = contentTypeHeader?.split(separator: ";").first else {
         return false
     }
     return utf8ContentTypes.contains(String(contentType))
 }
-
-public typealias ResolveBlock<T> = (T?) -> Void
-public typealias RejectBlock = (String, String?, Error?) -> Void
 
 enum SendError: Error {
     case nonBase64RequestBody
@@ -33,55 +17,15 @@ enum SendError: Error {
     case invalidRequestBaseURL
     case invalidRequestPathOrQueryParameters
     case invalidResponseHeaderParameters
-    
-    var message: String {
-        switch self {
-        case .nonBase64RequestBody:
-            return "Your request headers specify a Content-Type NOT included in `utf8ContentTypes`, but your request body is not a base64-encoded string."
-        case .nonUTF8RequestBody:
-            return "Your request headers specify a Content-Type included in `utf8ContentTypes`, but your request body is not a UTF8-encoded string."
-        case .nonUTF8ResponseBody:
-            return "The response headers specify a Content-Type included in `utf8ContentTypes`, but the response body was not UTF8-encoded."
-            
-        case .invalidRequestBaseURL:
-            return "Your base URL is not valid."
-        case .invalidRequestPathOrQueryParameters:
-            return "Your path or query parameters is not valid."
-        case .invalidResponseHeaderParameters:
-            return "The response headers were not valid."
-            
-        }
+}
+
+final class IgnoreRedirectsDelegate: NSObject, URLSessionTaskDelegate {
+    func urlSession(_ session: URLSession, task: URLSessionTask, willPerformHTTPRedirection response: HTTPURLResponse, newRequest request: URLRequest) async -> URLRequest? {
+        return nil
     }
 }
 
-@propertyWrapper
-struct RequiredKey<Value> {
-    var wrappedValue: Value?
-}
-
-extension RequiredKey: Decodable where Value: Decodable {
-    init(from decoder: Decoder) throws {
-        let container = try decoder.singleValueContainer()
-        wrappedValue = container.decodeNil() ? nil : try container.decode(Value.self)
-    }
-}
-
-extension RequiredKey: Encodable where Value: Encodable {
-    func encode(to encoder: Encoder) throws {
-        var container = encoder.singleValueContainer()
-        try container.encode(wrappedValue)
-    }
-}
-
-struct Request: Decodable {
-    let baseURL: String
-    let path: String
-    let queryParameters: [String: String]
-    let headerParameters: [String: String]
-    let method: String
-    @RequiredKey var body: String?
-    let utf8ContentTypes: [String]
-    
+extension Request {
     var url: Result<URL, SendError> {
         guard var urlComponents = URLComponents(string: baseURL) else {
             return .failure(.invalidRequestBaseURL)
@@ -103,7 +47,7 @@ struct Request: Decodable {
     var urlRequest: Result<URLRequest, SendError> {
         return url.flatMap { url in
             var urlRequest = URLRequest(url: url)
-            urlRequest.httpMethod = method
+            urlRequest.httpMethod = String(describing: method)
             
             for (key, value) in headerParameters {
                 urlRequest.setValue(value, forHTTPHeaderField: key)
@@ -128,21 +72,14 @@ struct Request: Decodable {
     }
 }
 
-struct Response: Encodable {
-    let statusCode: Int
-    let headerParameters: [String: String]
-    @RequiredKey var body: String?
-    
+extension Response {
     init(request: Request, data: Data, httpURLResponse: HTTPURLResponse) throws {
-        self.statusCode = httpURLResponse.statusCode
-        
         guard let headerParameters = httpURLResponse.allHeaderFields as? [String: String] else {
             throw SendError.invalidResponseHeaderParameters
         }
-        self.headerParameters = headerParameters
-        
+        let body: String?
         if (data.isEmpty) {
-            self.body = nil
+            body = nil
         } else {
             let bodyIsUTF8 = bodyIsUTF8(
                 contentTypeHeader: httpURLResponse.value(forHTTPHeaderField: "Content-Type"),
@@ -152,19 +89,19 @@ struct Response: Encodable {
                 guard let utf8Body = String(data: data, encoding: .utf8) else {
                     throw SendError.nonUTF8ResponseBody
                 }
-                self.body = utf8Body
+                body = utf8Body
             } else {
-                self.body = data.base64EncodedString()
+                body = data.base64EncodedString()
             }
         }
+        self.init(
+            statusCode: Double(httpURLResponse.statusCode),
+            headerParameters: headerParameters,
+            body: body
+        )
     }
 }
 
-final class IgnoreRedirectsDelegate: NSObject, URLSessionTaskDelegate {
-    func urlSession(_ session: URLSession, task: URLSessionTask, willPerformHTTPRedirection response: HTTPURLResponse, newRequest request: URLRequest) async -> URLRequest? {
-        return nil
-    }
-}
 
 final class NetworkManager {
     static let shared = NetworkManager()
@@ -190,29 +127,19 @@ final class Send: HybridSendSpec {
     
     lazy var session = NetworkManager.shared.session
     
-    func send(stringifiedRequest: String) async throws -> String {
+    func send(request: Request) async throws -> Response {
         do {
-            guard let requestData = stringifiedRequest.data(using: .utf8) else {
-                throw SendError.invalidRequestBaseURL
-            }
-            let request = try JSONDecoder().decode(Request.self, from: requestData)
             let urlRequest = try request.urlRequest.get()
-            
             let (data, urlResponse) = try await session.data(for: urlRequest)
             guard let httpURLResponse = urlResponse as? HTTPURLResponse else {
-                throw SendError.nonBase64RequestBody
+                throw SendError.nonUTF8ResponseBody
             }
             let response = try Response(
                 request: request,
                 data: data,
                 httpURLResponse: httpURLResponse
             )
-            
-            let responseData = try JSONEncoder().encode(response)
-            guard let stringifiedResponse = String(data: responseData, encoding: .utf8) else {
-                throw SendError.nonUTF8RequestBody
-            }
-            return stringifiedResponse
+            return response
         } catch let sendError as SendError {
             switch (sendError) {
             case .nonBase64RequestBody,
@@ -220,7 +147,7 @@ final class Send: HybridSendSpec {
                     .nonUTF8RequestBody,
                     .invalidRequestPathOrQueryParameters:
                 throw SendError.nonUTF8RequestBody
-
+                
             case .nonUTF8ResponseBody,
                     .invalidResponseHeaderParameters:
                 throw SendError.nonUTF8ResponseBody
@@ -228,10 +155,10 @@ final class Send: HybridSendSpec {
             
         } catch let decodingError as DecodingError {
             throw SendError.nonUTF8ResponseBody
-
+            
         } catch let encodingError as EncodingError {
             throw SendError.nonUTF8ResponseBody
-
+            
         } catch let urlError as URLError {
             switch (urlError.code) {
             case .appTransportSecurityRequiresSecureConnection,
@@ -252,7 +179,7 @@ final class Send: HybridSendSpec {
                     .userAuthenticationRequired,
                     .userCancelledAuthentication:
                 throw SendError.nonUTF8ResponseBody
-
+                
             case  .callIsActive,
                     .internationalRoamingOff,
                     .networkConnectionLost,
@@ -266,7 +193,7 @@ final class Send: HybridSendSpec {
                     .timedOut,
                     .appTransportSecurityRequiresSecureConnection:
                 throw SendError.nonUTF8ResponseBody
-
+                
             case .backgroundSessionInUseByAnotherProcess,
                     .backgroundSessionRequiresSharedContainer,
                     .backgroundSessionWasDisconnected,
@@ -286,7 +213,7 @@ final class Send: HybridSendSpec {
                     .redirectToNonExistentLocation,
                     .zeroByteResource:
                 throw SendError.nonUTF8ResponseBody
-
+                
             default:
                 // NOTE: The only other documented case is `unknown`, but code is not an enum so a default case is required regardless
                 throw SendError.nonUTF8ResponseBody
@@ -296,14 +223,14 @@ final class Send: HybridSendSpec {
         }
     }
     
-    
-    func send(request: String) throws -> NitroModules.Promise<String> {
+    func send(request: Request) throws -> NitroModules.Promise<Response> {
         return Promise.async { [weak self] in
             if let self {
-                return try await self.send(stringifiedRequest: request)
+                return try await self.send(request: request)
             } else {
                 throw SendError.nonUTF8ResponseBody
             }
         }
     }
+    
 }

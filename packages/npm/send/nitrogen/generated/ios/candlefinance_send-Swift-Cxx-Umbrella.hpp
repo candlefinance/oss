@@ -9,11 +9,22 @@
 #pragma once
 
 // Forward declarations of C++ defined types
-
+// Forward declaration of `Method` to properly resolve imports.
+namespace margelo::nitro::send { enum class Method; }
+// Forward declaration of `Request` to properly resolve imports.
+namespace margelo::nitro::send { struct Request; }
+// Forward declaration of `Response` to properly resolve imports.
+namespace margelo::nitro::send { struct Response; }
 
 // Include C++ defined types
+#include "Method.hpp"
+#include "Request.hpp"
+#include "Response.hpp"
 #include <future>
+#include <optional>
 #include <string>
+#include <unordered_map>
+#include <vector>
 
 // C++ helpers for Swift
 #include "candlefinance_send-Swift-Cxx-Bridge.hpp"

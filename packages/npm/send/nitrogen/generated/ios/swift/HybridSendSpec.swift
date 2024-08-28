@@ -33,7 +33,7 @@ public protocol HybridSendSpec: HybridObjectSpec {
   
 
   // Methods
-  func send(request: String) throws -> Promise<String>
+  func send(request: Request) throws -> Promise<Response>
 }
 
 public extension HybridSendSpec {

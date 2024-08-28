@@ -14,10 +14,14 @@
 #error NitroModules cannot be found! Are you sure you installed NitroModules properly?
 #endif
 
-
+// Forward declaration of `Response` to properly resolve imports.
+namespace margelo::nitro::send { struct Response; }
+// Forward declaration of `Request` to properly resolve imports.
+namespace margelo::nitro::send { struct Request; }
 
 #include <future>
-#include <string>
+#include "Response.hpp"
+#include "Request.hpp"
 
 namespace margelo::nitro::send {
 
@@ -47,7 +51,7 @@ namespace margelo::nitro::send {
 
     public:
       // Methods
-      virtual std::future<std::string> send(const std::string& request) = 0;
+      virtual std::future<Response> send(const Request& request) = 0;
 
     protected:
       // Hybrid Setup

@@ -64,13 +64,13 @@ public final class HybridSendSpecCxx {
 
   // Methods
   @inline(__always)
-  public func send(request: std.string) -> bridge.PromiseHolder_std__string_ {
+  public func send(request: Request) -> bridge.PromiseHolder_Response_ {
     do {
-      let result = try self.implementation.send(request: String(request))
-      return { () -> bridge.PromiseHolder_std__string_ in
-        let promiseHolder = bridge.create_PromiseHolder_std__string_()
+      let result = try self.implementation.send(request: request)
+      return { () -> bridge.PromiseHolder_Response_ in
+        let promiseHolder = bridge.create_PromiseHolder_Response_()
         result
-          .then({ promiseHolder.resolve(std.string($0)) })
+          .then({ promiseHolder.resolve($0) })
           .catch({ promiseHolder.reject(std.string(String(describing: $0))) })
         return promiseHolder
       }()
