@@ -9,8 +9,6 @@
 #pragma once
 
 // Forward declarations of C++ defined types
-// Forward declaration of `Method` to properly resolve imports.
-namespace margelo::nitro::send { enum class Method; }
 // Forward declaration of `Parameters` to properly resolve imports.
 namespace margelo::nitro::send { struct Parameters; }
 // Forward declaration of `Request` to properly resolve imports.
@@ -19,7 +17,6 @@ namespace margelo::nitro::send { struct Request; }
 namespace margelo::nitro::send { struct Response; }
 
 // Include C++ defined types
-#include "Method.hpp"
 #include "Parameters.hpp"
 #include "Request.hpp"
 #include "Response.hpp"

@@ -19,8 +19,6 @@ namespace margelo::nitro::send { struct Response; }
 namespace margelo::nitro::send { struct Parameters; }
 // Forward declaration of `Request` to properly resolve imports.
 namespace margelo::nitro::send { struct Request; }
-// Forward declaration of `Method` to properly resolve imports.
-namespace margelo::nitro::send { enum class Method; }
 
 #include <future>
 #include "Response.hpp"
@@ -30,7 +28,6 @@ namespace margelo::nitro::send { enum class Method; }
 #include <string>
 #include <optional>
 #include "Request.hpp"
-#include "Method.hpp"
 #include <vector>
 
 #if __has_include(<NitroModules/HybridContext.hpp>)

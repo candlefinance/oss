@@ -17,6 +17,8 @@ enum SendError: Error {
     case invalidRequestBaseURL
     case invalidRequestPathOrQueryParameters
     case invalidResponseHeaderParameters
+    
+    case unknown
 }
 
 final class IgnoreRedirectsDelegate: NSObject, URLSessionTaskDelegate {
@@ -47,7 +49,7 @@ extension Request {
     var urlRequest: Result<URLRequest, SendError> {
         return url.flatMap { url in
             var urlRequest = URLRequest(url: url)
-            urlRequest.httpMethod = String(describing: method)
+            urlRequest.httpMethod = method
             
             for (key, value) in header.parameters {
                 urlRequest.setValue(value, forHTTPHeaderField: key)
@@ -149,18 +151,18 @@ final class Send: HybridSendSpec {
                 throw SendError.nonUTF8RequestBody
                 
             case .nonUTF8ResponseBody,
+                    .unknown,
                     .invalidResponseHeaderParameters:
                 throw SendError.nonUTF8ResponseBody
             }
             
-        } catch let _ as DecodingError {
+        } catch _ as DecodingError {
             throw SendError.nonUTF8ResponseBody
             
-        } catch let _ as EncodingError {
+        } catch _ as EncodingError {
             throw SendError.nonUTF8ResponseBody
             
         } catch let urlError as URLError {
-            print(urlError)
             switch (urlError.code) {
             case .appTransportSecurityRequiresSecureConnection,
                     .badURL,
@@ -217,10 +219,10 @@ final class Send: HybridSendSpec {
                 
             default:
                 // NOTE: The only other documented case is `unknown`, but code is not an enum so a default case is required regardless
-                throw SendError.nonUTF8ResponseBody
+                throw SendError.unknown
             }
         } catch _ {
-            throw SendError.nonUTF8ResponseBody
+            throw SendError.unknown
         }
     }
     
@@ -229,7 +231,7 @@ final class Send: HybridSendSpec {
             if let self {
                 return try await self.send(request: request)
             } else {
-                throw SendError.nonUTF8ResponseBody
+                throw SendError.unknown
             }
         }
     }

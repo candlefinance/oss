@@ -19,8 +19,8 @@ public extension Request {
   /**
    * Create a new instance of `Request`.
    */
-  init(baseURL: String, path: String, query: Parameters, header: Parameters, method: Method, body: String?, utf8ContentTypes: [String]) {
-    self.init(std.string(baseURL), std.string(path), query, header, method, { () -> bridge.std__optional_std__string_ in
+  init(baseURL: String, path: String, query: Parameters, header: Parameters, method: String, body: String?, utf8ContentTypes: [String]) {
+    self.init(std.string(baseURL), std.string(path), query, header, std.string(method), { () -> bridge.std__optional_std__string_ in
       if let actualValue = body {
         return bridge.create_std__optional_std__string_(std.string(actualValue))
       } else {
@@ -79,14 +79,14 @@ public extension Request {
     }
   }
   
-  var method: Method {
+  var method: String {
     @inline(__always)
     get {
-      return self.__method
+      return String(self.__method)
     }
     @inline(__always)
     set {
-      self.__method = newValue
+      self.__method = std.string(newValue)
     }
   }
   

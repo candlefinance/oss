@@ -1,16 +1,5 @@
 import { type HybridObject } from 'react-native-nitro-modules'
 
-export type Method =
-  | 'GET'
-  | 'POST'
-  | 'PUT'
-  | 'DELETE'
-  | 'PATCH'
-  | 'HEAD'
-  | 'OPTIONS'
-  | 'CONNECT'
-  | 'TRACE'
-
 interface Parameters {
   parameters: Record<string, string>
 }
@@ -20,7 +9,7 @@ export interface Request {
   path: string
   query: Parameters
   header: Parameters
-  method: Method
+  method: string
   body: string | null
   utf8ContentTypes: string[]
 }
