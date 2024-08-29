@@ -10,17 +10,17 @@ export interface Request {
   query: Parameters
   header: Parameters
   method: string
-  body: string | null
+  body: string | undefined
   utf8ContentTypes: string[]
 }
 
 export interface Response {
   statusCode: number
   header: Parameters
-  body: string | null
+  body: string | undefined
 }
 
-enum Code {
+export enum Code {
   RESPONSE_INVALID,
   REQUEST_INVALID,
   NETWORK_ERROR,
@@ -28,7 +28,7 @@ enum Code {
   NON_UTF8_RESPONSE_BODY,
   NON_UTF8_REQUEST_BODY,
   INVALID_REQUEST_PATH_OR_QUERY_PARAMETERS,
-  IVNALID_REQUEST_BASE_URL,
+  INVALID_REQUEST_BASE_URL,
   NON_BASE64_REQUEST_BODY,
   INVALID_RESPONSE_HEADER_PARAMETERS,
   UNEXPECTED,

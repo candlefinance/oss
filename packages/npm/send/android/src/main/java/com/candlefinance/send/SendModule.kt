@@ -1,5 +1,6 @@
 package com.candlefinance.send
 
+import com.facebook.react.bridge.Promise
 import com.facebook.react.bridge.ReactApplicationContext
 import com.facebook.react.module.annotations.ReactModule
 
@@ -11,10 +12,8 @@ class SendModule(reactContext: ReactApplicationContext) :
     return NAME
   }
 
-  // Example method
-  // See https://reactnative.dev/docs/native-modules-android
-  override fun multiply(a: Double, b: Double): Double {
-    return a * b
+  override fun send(request: String?, promise: Promise?) {
+    TODO("Not yet implemented")
   }
 
   companion object {
