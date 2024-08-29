@@ -1,0 +1,10 @@
+{
+  "cxxNamespace": ["cache"],
+  "ios": {
+    "iosModulename": "candlefinance_cache"
+  },
+  "android": {
+    "androidNamespace": ["candlefinance_cache"],
+    "androidCxxLibName": "cache"
+  }
+}
