@@ -8,32 +8,18 @@ private func bodyIsUTF8(contentTypeHeader: String?, utf8ContentTypes: [String]) 
     return utf8ContentTypes.contains(String(contentType))
 }
 
-enum SendError: Error {
-    case nonBase64RequestBody
-    
-    case nonUTF8RequestBody
-    case nonUTF8ResponseBody
-    
-    case invalidRequestBaseURL
-    case invalidRequestPathOrQueryParameters
-    case invalidResponseHeaderParameters
-    
-    case decodingError
-    case encodingError
-    
-    case unknown
-}
-
 final class IgnoreRedirectsDelegate: NSObject, URLSessionTaskDelegate {
     func urlSession(_ session: URLSession, task: URLSessionTask, willPerformHTTPRedirection response: HTTPURLResponse, newRequest request: URLRequest) async -> URLRequest? {
         return nil
     }
 }
 
+extension SendError: Error {}
+
 extension Request {
     var url: Result<URL, SendError> {
         guard var urlComponents = URLComponents(string: baseURL) else {
-            return .failure(.invalidRequestBaseURL)
+            return .failure(SendError(code: .ivnalid_request_base_url, message: ""))
         }
         urlComponents.path = path
         
@@ -44,7 +30,7 @@ extension Request {
         }
         
         guard let url = urlComponents.url else {
-            return .failure(.invalidRequestPathOrQueryParameters)
+            return .failure(SendError(code: .invalid_request_path_or_query_parameters, message: ""))
         }
         return .success(url)
     }
@@ -62,12 +48,12 @@ extension Request {
                 let contentTypeHeader = header.parameters.first(where: { $0.key.caseInsensitiveCompare("Content-Type") == .orderedSame })?.value
                 if bodyIsUTF8(contentTypeHeader: contentTypeHeader, utf8ContentTypes: utf8ContentTypes) {
                     guard let utf8Body = body.data(using: .utf8) else {
-                        return .failure(.nonUTF8RequestBody)
+                        return .failure(SendError(code: .non_utf8_request_body, message: ""))
                     }
                     urlRequest.httpBody = utf8Body
                 } else {
                     guard let base64Body = Data(base64Encoded: body) else {
-                        return .failure(.nonBase64RequestBody)
+                        return .failure(SendError(code: .non_base64_request_body, message: ""))
                     }
                     urlRequest.httpBody = base64Body
                 }
@@ -80,7 +66,7 @@ extension Request {
 extension Response {
     init(request: Request, data: Data, httpURLResponse: HTTPURLResponse) throws {
         guard let headerParameters = httpURLResponse.allHeaderFields as? [String: String] else {
-            throw SendError.invalidResponseHeaderParameters
+            throw SendError(code: .invalid_response_header_parameters, message: "")
         }
         let body: String?
         if (data.isEmpty) {
@@ -92,7 +78,7 @@ extension Response {
             )
             if (bodyIsUTF8) {
                 guard let utf8Body = String(data: data, encoding: .utf8) else {
-                    throw SendError.nonUTF8ResponseBody
+                    throw SendError(code: .non_utf8_response_body, message: "")
                 }
                 body = utf8Body
             } else {
@@ -132,24 +118,90 @@ final class Send: HybridSendSpec {
     
     lazy var session = NetworkManager.shared.session
     
-    func send(request: Request) throws -> NitroModules.Promise<Response> {
+    func send(request: Request) throws -> NitroModules.Promise<SendResult> {
         return Promise.async { [weak self] in
             if let self {
-                let urlRequest = try request.urlRequest.get()
-                let (data, urlResponse) = try await session.data(for: urlRequest)
-                guard let httpURLResponse = urlResponse as? HTTPURLResponse else {
-                    throw SendError.nonUTF8ResponseBody
+                do {
+                    let urlRequest = try request.urlRequest.get()
+                    let (data, urlResponse) = try await session.data(for: urlRequest)
+                    guard let httpURLResponse = urlResponse as? HTTPURLResponse else {
+                        throw SendError(code: .non_utf8_response_body, message: "")
+                    }
+                    let response = try Response(
+                        request: request,
+                        data: data,
+                        httpURLResponse: httpURLResponse
+                    )
+                    return SendResult(response: response, error: nil)
+                } catch let sendError as SendError {
+                    return SendResult(response: nil, error: sendError)
+                } catch let urlError as URLError {
+                    switch (urlError.code) {
+                    case .appTransportSecurityRequiresSecureConnection,
+                            .badURL,
+                            .cancelled,
+                            .cannotConnectToHost,
+                            .cannotFindHost,
+                            .clientCertificateRejected,
+                            .clientCertificateRequired,
+                            .dataLengthExceedsMaximum,
+                            .dataNotAllowed,
+                            .dnsLookupFailed,
+                            .fileDoesNotExist,
+                            .fileIsDirectory,
+                            .noPermissionsToReadFile,
+                            .requestBodyStreamExhausted,
+                            .unsupportedURL,
+                            .userAuthenticationRequired,
+                            .userCancelledAuthentication:
+                        let sendError = SendError(code: .response_invalid, message: urlError.localizedDescription)
+                        return SendResult(response: nil, error: sendError)
+                    case  .callIsActive,
+                            .internationalRoamingOff,
+                            .networkConnectionLost,
+                            .notConnectedToInternet,
+                            .resourceUnavailable,
+                            .serverCertificateHasBadDate,
+                            .serverCertificateHasUnknownRoot,
+                            .serverCertificateNotYetValid,
+                            .serverCertificateUntrusted,
+                            .secureConnectionFailed,
+                            .timedOut,
+                            .appTransportSecurityRequiresSecureConnection:
+                        let sendError = SendError(code: .no_response, message: urlError.localizedDescription)
+                        return SendResult(response: nil, error: sendError)
+                    case .backgroundSessionInUseByAnotherProcess,
+                            .backgroundSessionRequiresSharedContainer,
+                            .backgroundSessionWasDisconnected,
+                            .badServerResponse,
+                            .cannotCloseFile,
+                            .cannotCreateFile,
+                            .cannotDecodeContentData,
+                            .cannotDecodeRawData,
+                            .cannotMoveFile,
+                            .cannotOpenFile,
+                            .cannotParseResponse,
+                            .cannotRemoveFile,
+                            .cannotWriteToFile,
+                            .downloadDecodingFailedMidStream,
+                            .downloadDecodingFailedToComplete,
+                            .httpTooManyRedirects,
+                            .redirectToNonExistentLocation,
+                            .zeroByteResource:
+                        let sendError = SendError(code: .response_invalid, message: urlError.localizedDescription)
+                        return SendResult(response: nil, error: sendError)
+                    default:
+                        let sendError = SendError(code: .unexpected, message: "Something went wrong. Please file an issue on GitHub or try again.")
+                        return SendResult(response: nil, error: sendError)
+                    }
+                } catch let error {
+                    let sendError = SendError(code: .unexpected, message: error.localizedDescription)
+                    return SendResult(response: nil, error: sendError)
                 }
-                let response = try Response(
-                    request: request,
-                    data: data,
-                    httpURLResponse: httpURLResponse
-                )
-                return response
             } else {
-                throw SendError.unknown
+                let sendError = SendError(code: .unexpected, message: "Something went wrong. Please file an issue on GitHub or try again.")
+                return SendResult(response: nil, error: sendError)
             }
         }
     }
-    
 }

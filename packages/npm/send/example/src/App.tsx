@@ -53,14 +53,13 @@ const App = () => {
           'Accept': 'application/json',
         },
       },
+    }).then((result) => {
+      if (result.error) {
+        console.log('ERROR', serializeError(result.error))
+      } else {
+        setData(JSON.parse(result.response?.body as any).results[0])
+      }
     })
-      .then((response) => {
-        console.log('SUCCESS', response)
-        setData(JSON.parse(response.body as any).results[0])
-      })
-      .catch((error) => {
-        console.log('FAILURE', serializeError(error))
-      })
   }, [])
 
   if (!data) {
