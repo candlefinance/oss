@@ -18,6 +18,9 @@ enum SendError: Error {
     case invalidRequestPathOrQueryParameters
     case invalidResponseHeaderParameters
     
+    case decodingError
+    case encodingError
+    
     case unknown
 }
 
@@ -129,107 +132,20 @@ final class Send: HybridSendSpec {
     
     lazy var session = NetworkManager.shared.session
     
-    func send(request: Request) async throws -> Response {
-        do {
-            let urlRequest = try request.urlRequest.get()
-            let (data, urlResponse) = try await session.data(for: urlRequest)
-            guard let httpURLResponse = urlResponse as? HTTPURLResponse else {
-                throw SendError.nonUTF8ResponseBody
-            }
-            let response = try Response(
-                request: request,
-                data: data,
-                httpURLResponse: httpURLResponse
-            )
-            return response
-        } catch let sendError as SendError {
-            switch (sendError) {
-            case .nonBase64RequestBody,
-                    .invalidRequestBaseURL,
-                    .nonUTF8RequestBody,
-                    .invalidRequestPathOrQueryParameters:
-                throw SendError.nonUTF8RequestBody
-                
-            case .nonUTF8ResponseBody,
-                    .unknown,
-                    .invalidResponseHeaderParameters:
-                throw SendError.nonUTF8ResponseBody
-            }
-            
-        } catch _ as DecodingError {
-            throw SendError.nonUTF8ResponseBody
-            
-        } catch _ as EncodingError {
-            throw SendError.nonUTF8ResponseBody
-            
-        } catch let urlError as URLError {
-            switch (urlError.code) {
-            case .appTransportSecurityRequiresSecureConnection,
-                    .badURL,
-                    .cancelled,
-                    .cannotConnectToHost,
-                    .cannotFindHost,
-                    .clientCertificateRejected,
-                    .clientCertificateRequired,
-                    .dataLengthExceedsMaximum,
-                    .dataNotAllowed,
-                    .dnsLookupFailed,
-                    .fileDoesNotExist,
-                    .fileIsDirectory,
-                    .noPermissionsToReadFile,
-                    .requestBodyStreamExhausted,
-                    .unsupportedURL,
-                    .userAuthenticationRequired,
-                    .userCancelledAuthentication:
-                throw SendError.nonUTF8ResponseBody
-                
-            case  .callIsActive,
-                    .internationalRoamingOff,
-                    .networkConnectionLost,
-                    .notConnectedToInternet,
-                    .resourceUnavailable,
-                    .serverCertificateHasBadDate,
-                    .serverCertificateHasUnknownRoot,
-                    .serverCertificateNotYetValid,
-                    .serverCertificateUntrusted,
-                    .secureConnectionFailed,
-                    .timedOut,
-                    .appTransportSecurityRequiresSecureConnection:
-                throw SendError.nonUTF8ResponseBody
-                
-            case .backgroundSessionInUseByAnotherProcess,
-                    .backgroundSessionRequiresSharedContainer,
-                    .backgroundSessionWasDisconnected,
-                    .badServerResponse,
-                    .cannotCloseFile,
-                    .cannotCreateFile,
-                    .cannotDecodeContentData,
-                    .cannotDecodeRawData,
-                    .cannotMoveFile,
-                    .cannotOpenFile,
-                    .cannotParseResponse,
-                    .cannotRemoveFile,
-                    .cannotWriteToFile,
-                    .downloadDecodingFailedMidStream,
-                    .downloadDecodingFailedToComplete,
-                    .httpTooManyRedirects,
-                    .redirectToNonExistentLocation,
-                    .zeroByteResource:
-                throw SendError.nonUTF8ResponseBody
-                
-            default:
-                // NOTE: The only other documented case is `unknown`, but code is not an enum so a default case is required regardless
-                throw SendError.unknown
-            }
-        } catch _ {
-            throw SendError.unknown
-        }
-    }
-    
     func send(request: Request) throws -> NitroModules.Promise<Response> {
         return Promise.async { [weak self] in
             if let self {
-                return try await self.send(request: request)
+                let urlRequest = try request.urlRequest.get()
+                let (data, urlResponse) = try await session.data(for: urlRequest)
+                guard let httpURLResponse = urlResponse as? HTTPURLResponse else {
+                    throw SendError.nonUTF8ResponseBody
+                }
+                let response = try Response(
+                    request: request,
+                    data: data,
+                    httpURLResponse: httpURLResponse
+                )
+                return response
             } else {
                 throw SendError.unknown
             }
