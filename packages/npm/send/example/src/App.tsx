@@ -9,20 +9,6 @@ import {
   View,
 } from 'react-native'
 
-const serializeError = (error: unknown) => {
-  console.log('SERIALIZING ERROR', error, error instanceof Error)
-  if (error instanceof Error) {
-    return JSON.stringify({
-      ...error,
-      message: error.message,
-      stack: error.stack ?? 'NOT_INCLUDED',
-      name: error.name,
-    })
-  } else {
-    return JSON.stringify(error)
-  }
-}
-
 const App = () => {
   const [data, setData] = useState<{
     trackName: string
@@ -31,7 +17,7 @@ const App = () => {
     description: string
     version: string
     screenshotUrls: string[]
-  } | null>()
+  } | null>(null)
 
   React.useEffect(() => {
     send({
@@ -44,7 +30,6 @@ const App = () => {
           country: 'US',
         },
       },
-      body: null,
       utf8ContentTypes: ['application/json', 'text/html', 'text/javascript'],
       header: {
         parameters: {
@@ -55,14 +40,14 @@ const App = () => {
       },
     }).then((result) => {
       if (result.error) {
-        console.log('ERROR', serializeError(result.error))
+        console.log('ERROR', result.error)
       } else {
         setData(JSON.parse(result.response?.body as any).results[0])
       }
     })
   }, [])
 
-  if (!data) {
+  if (data === null) {
     return (
       <View style={styles.container}>
         <Text>Loading...</Text>

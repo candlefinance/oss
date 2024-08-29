@@ -33,7 +33,7 @@ namespace margelo::nitro::send {
     NON_UTF8_RESPONSE_BODY      SWIFT_NAME(non_utf8_response_body) = 4,
     NON_UTF8_REQUEST_BODY      SWIFT_NAME(non_utf8_request_body) = 5,
     INVALID_REQUEST_PATH_OR_QUERY_PARAMETERS      SWIFT_NAME(invalid_request_path_or_query_parameters) = 6,
-    IVNALID_REQUEST_BASE_URL      SWIFT_NAME(ivnalid_request_base_url) = 7,
+    INVALID_REQUEST_BASE_URL      SWIFT_NAME(invalid_request_base_url) = 7,
     NON_BASE64_REQUEST_BODY      SWIFT_NAME(non_base64_request_body) = 8,
     INVALID_RESPONSE_HEADER_PARAMETERS      SWIFT_NAME(invalid_response_header_parameters) = 9,
     UNEXPECTED      SWIFT_NAME(unexpected) = 10,

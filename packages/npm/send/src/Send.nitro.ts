@@ -1,6 +1,6 @@
 import { type HybridObject } from 'react-native-nitro-modules'
 
-interface Parameters {
+export interface Parameters {
   parameters: Record<string, string>
 }
 
@@ -10,7 +10,7 @@ export interface Request {
   query: Parameters
   header: Parameters
   method: string
-  body: string | undefined
+  body?: string
   utf8ContentTypes: string[]
 }
 
