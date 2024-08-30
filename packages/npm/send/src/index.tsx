@@ -8,23 +8,12 @@ import {
   type Send,
 } from './Send.nitro'
 
-export type SendRequest = _Request & { method: Method }
+export type SendRequest = _Request
 export type SendResponse = _Response
 export type SendError = _SendError
 export type SendResult =
   | (_Response & { result: 'success' })
   | (SendError & { result: 'error' })
-
-export type Method =
-  | 'GET'
-  | 'POST'
-  | 'PUT'
-  | 'DELETE'
-  | 'PATCH'
-  | 'HEAD'
-  | 'OPTIONS'
-  | 'CONNECT'
-  | 'TRACE'
 
 const Send = NitroModules.createHybridObject<Send>('Send')
 

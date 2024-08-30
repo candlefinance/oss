@@ -13,7 +13,7 @@ extension SendError: Error {}
 extension Request {
     var url: Result<URL, SendError> {
         guard var urlComponents = URLComponents(string: baseURL) else {
-            return .failure(SendError(code: .invalid_request_base_url, message: "Your base URL is not valid."))
+            return .failure(SendError(code: .invalidRequestBaseUrl, message: "Your base URL is not valid."))
         }
         urlComponents.path = path
         
@@ -24,7 +24,7 @@ extension Request {
         }
         
         guard let url = urlComponents.url else {
-            return .failure(SendError(code: .invalid_request_path_or_query_parameters, message: "Your path or query parameters is not valid."))
+            return .failure(SendError(code: .invalidRequestPathOrQueryParameters, message: "Your path or query parameters is not valid."))
         }
         return .success(url)
     }
@@ -32,7 +32,7 @@ extension Request {
     var urlRequest: Result<URLRequest, SendError> {
         return url.flatMap { url in
             var urlRequest = URLRequest(url: url)
-            urlRequest.httpMethod = method
+            urlRequest.httpMethod = method.stringValue
             
             for (key, value) in header.parameters {
                 urlRequest.setValue(value, forHTTPHeaderField: key)
@@ -42,12 +42,12 @@ extension Request {
                 let contentTypeHeader = header.parameters.first(where: { $0.key.caseInsensitiveCompare("Content-Type") == .orderedSame })?.value
                 if bodyIsUTF8(contentTypeHeader: contentTypeHeader, utf8ContentTypes: utf8ContentTypes) {
                     guard let utf8Body = body.data(using: .utf8) else {
-                        return .failure(SendError(code: .non_utf8_request_body, message: "Your request headers specify a Content-Type included in `utf8ContentTypes`, but your request body is not a UTF8-encoded string."))
+                        return .failure(SendError(code: .nonUtf8RequestBody, message: "Your request headers specify a Content-Type included in `utf8ContentTypes`, but your request body is not a UTF8-encoded string."))
                     }
                     urlRequest.httpBody = utf8Body
                 } else {
                     guard let base64Body = Data(base64Encoded: body) else {
-                        return .failure(SendError(code: .non_base64_request_body, message: "Your request headers specify a Content-Type NOT included in `utf8ContentTypes`, but your request body is not a base64-encoded string."))
+                        return .failure(SendError(code: .nonUtf8RequestBody, message: "Your request headers specify a Content-Type NOT included in `utf8ContentTypes`, but your request body is not a base64-encoded string."))
                     }
                     urlRequest.httpBody = base64Body
                 }
@@ -60,11 +60,12 @@ extension Request {
 extension Response {
     init(request: Request, data: Data, httpURLResponse: HTTPURLResponse) throws {
         guard let headerParameters = httpURLResponse.allHeaderFields as? [String: String] else {
-            throw SendError(code: .invalid_response_header_parameters, message: "The response headers were not valid.")
+            throw SendError(code: .invalidResponseHeaderParameters, message: "The response headers were not valid.")
         }
-        let body: String?
+        let statusCode = Double(httpURLResponse.statusCode)
+        let header = Parameters(parameters: headerParameters)
         if (data.isEmpty) {
-            body = nil
+            self.init(statusCode: statusCode, header: header, body: nil)
         } else {
             let bodyIsUTF8 = bodyIsUTF8(
                 contentTypeHeader: httpURLResponse.value(forHTTPHeaderField: "Content-Type"),
@@ -72,18 +73,17 @@ extension Response {
             )
             if (bodyIsUTF8) {
                 guard let utf8Body = String(data: data, encoding: .utf8) else {
-                    throw SendError(code: .non_utf8_response_body, message: "The response headers specify a Content-Type included in `utf8ContentTypes`, but the response body was not UTF8-encoded.")
+                    throw SendError(code: .nonUtf8ResponseBody, message: "The response headers specify a Content-Type included in `utf8ContentTypes`, but the response body was not UTF8-encoded.")
                 }
-                body = utf8Body
+                self.init(statusCode: statusCode, header: header, body: utf8Body)
             } else {
-                body = data.base64EncodedString()
+                self.init(
+                    statusCode: statusCode,
+                    header: header,
+                    body: data.base64EncodedString()
+                )
             }
         }
-        self.init(
-            statusCode: Double(httpURLResponse.statusCode),
-            header: Parameters(parameters: headerParameters),
-            body: body
-        )
     }
 }
 
@@ -101,19 +101,22 @@ final class Send: HybridSendSpec {
         return getSizeOf(self)
     }
     
-    static let session = URLSession(
+    lazy var session = URLSession(
         configuration: .default,
         delegate: IgnoreRedirectsDelegate(),
         delegateQueue: nil
     )
     
-    func send(request: Request) -> NitroModules.Promise<SendResult> {
-        return Promise.async {
+    func send(request: Request) throws -> Promise<SendResult> {
+        return Promise.async { [weak self] in
+            guard let self else {
+                return .init(response: nil, error: nil)
+            }
             do {
                 let urlRequest = try request.urlRequest.get()
-                let (data, urlResponse) = try await Self.session.data(for: urlRequest)
+                let (data, urlResponse) = try await self.session.data(for: urlRequest)
                 guard let httpURLResponse = urlResponse as? HTTPURLResponse else {
-                    let sendError = SendError(code: .response_invalid, message: "Your request received a response, but it couldn't be processed. Please verify the configuration of your server.")
+                    let sendError = SendError(code: .responseInvalid, message: "Your request received a response, but it couldn't be processed. Please verify the configuration of your server.")
                     return SendResult(response: nil, error: sendError)
                 }
                 let response = try Response(
@@ -143,7 +146,7 @@ final class Send: HybridSendSpec {
                         .unsupportedURL,
                         .userAuthenticationRequired,
                         .userCancelledAuthentication:
-                    let sendError = SendError(code: .request_invalid, message: urlError.localizedDescription)
+                    let sendError = SendError(code: .requestInvalid, message: urlError.localizedDescription)
                     return SendResult(response: nil, error: sendError)
                 case  .callIsActive,
                         .internationalRoamingOff,
@@ -157,7 +160,7 @@ final class Send: HybridSendSpec {
                         .secureConnectionFailed,
                         .timedOut,
                         .appTransportSecurityRequiresSecureConnection:
-                    let sendError = SendError(code: .no_response, message: urlError.localizedDescription)
+                    let sendError = SendError(code: .noResponse, message: urlError.localizedDescription)
                     return SendResult(response: nil, error: sendError)
                 case .backgroundSessionInUseByAnotherProcess,
                         .backgroundSessionRequiresSharedContainer,
@@ -177,7 +180,7 @@ final class Send: HybridSendSpec {
                         .httpTooManyRedirects,
                         .redirectToNonExistentLocation,
                         .zeroByteResource:
-                    let sendError = SendError(code: .response_invalid, message: urlError.localizedDescription)
+                    let sendError = SendError(code: .responseInvalid, message: urlError.localizedDescription)
                     return SendResult(response: nil, error: sendError)
                 default:
                     // NOTE: The only other documented case is `unknown`, but code is not an enum so a default case is required regardless

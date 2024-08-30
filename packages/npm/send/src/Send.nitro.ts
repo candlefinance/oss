@@ -4,12 +4,23 @@ export interface Parameters {
   parameters: Record<string, string>
 }
 
+export type Method =
+  | 'GET'
+  | 'POST'
+  | 'PUT'
+  | 'DELETE'
+  | 'PATCH'
+  | 'HEAD'
+  | 'OPTIONS'
+  | 'CONNECT'
+  | 'TRACE'
+
 export interface Request {
   baseURL: string
   path: string
   query: Parameters
   header: Parameters
-  method: string
+  method: Method
   body?: string
   utf8ContentTypes: string[]
 }
@@ -44,6 +55,7 @@ export interface SendResult {
   error: SendError | undefined
 }
 
-export interface Send extends HybridObject<{ ios: 'swift' }> {
+export interface Send
+  extends HybridObject<{ ios: 'swift'; android: 'kotlin' }> {
   send(request: Request): Promise<SendResult>
 }
