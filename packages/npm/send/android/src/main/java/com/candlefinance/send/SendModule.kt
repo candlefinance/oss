@@ -1,18 +1,15 @@
 package com.candlefinance.send
 
-import com.facebook.react.bridge.Promise
-import com.facebook.react.bridge.ReactApplicationContext
-import com.facebook.react.module.annotations.ReactModule
+import com.margelo.nitro.candlefinance_send.HybridSendSpec
+import com.margelo.nitro.candlefinance_send.Request
+import com.margelo.nitro.candlefinance_send.SendResult
 
-@ReactModule(name = SendModule.NAME)
-class SendModule(reactContext: ReactApplicationContext) :
-  NativeSendSpec(reactContext) {
+class SendModule(): HybridSendSpec() {
 
-  override fun getName(): String {
-    return NAME
-  }
+  override val memorySize: Long
+    get() = 0
 
-  override fun send(request: String?, promise: Promise?) {
+  override fun send(request: Request): com.margelo.nitro.core.Promise<SendResult> {
     TODO("Not yet implemented")
   }
 

@@ -9,25 +9,21 @@ import java.util.HashMap
 
 class SendPackage : TurboReactPackage() {
   override fun getModule(name: String, reactContext: ReactApplicationContext): NativeModule? {
-    return if (name == SendModule.NAME) {
-      SendModule(reactContext)
-    } else {
-      null
-    }
+    return null
   }
 
   override fun getReactModuleInfoProvider(): ReactModuleInfoProvider {
     return ReactModuleInfoProvider {
       val moduleInfos: MutableMap<String, ReactModuleInfo> = HashMap()
-      moduleInfos[SendModule.NAME] = ReactModuleInfo(
-        SendModule.NAME,
-        SendModule.NAME,
-        false,  // canOverrideExistingModule
-        false,  // needsEagerInit
-        true,  // hasConstants
-        false,  // isCxxModule
-        true // isTurboModule
-      )
+//      moduleInfos[SendModule.NAME] = ReactModuleInfo(
+//        SendModule.NAME,
+//        SendModule.NAME,
+//        false,  // canOverrideExistingModule
+//        false,  // needsEagerInit
+//        true,  // hasConstants
+//        false,  // isCxxModule
+//        true // isTurboModule
+//      )
       moduleInfos
     }
   }
