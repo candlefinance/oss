@@ -8,12 +8,6 @@ private func bodyIsUTF8(contentTypeHeader: String?, utf8ContentTypes: [String]) 
     return utf8ContentTypes.contains(String(contentType))
 }
 
-final class IgnoreRedirectsDelegate: NSObject, URLSessionTaskDelegate {
-    func urlSession(_ session: URLSession, task: URLSessionTask, willPerformHTTPRedirection response: HTTPURLResponse, newRequest request: URLRequest) async -> URLRequest? {
-        return nil
-    }
-}
-
 extension SendError: Error {}
 
 extension Request {
@@ -93,6 +87,11 @@ extension Response {
     }
 }
 
+final class IgnoreRedirectsDelegate: NSObject, URLSessionTaskDelegate {
+    func urlSession(_ session: URLSession, task: URLSessionTask, willPerformHTTPRedirection response: HTTPURLResponse, newRequest request: URLRequest) async -> URLRequest? {
+        return nil
+    }
+}
 
 final class NetworkManager {
     static let shared = NetworkManager()
