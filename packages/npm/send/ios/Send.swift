@@ -108,11 +108,7 @@ final class Send: HybridSendSpec {
     )
     
     func send(request: Request) -> NitroModules.Promise<SendResult> {
-        return Promise.async { [weak self] in
-            guard let self else {
-                let sendError = SendError(code: .unexpected, message: "Reference to self is nil.")
-                return SendResult(response: nil, error: sendError)
-            }
+        return Promise.async {
             do {
                 let urlRequest = try request.urlRequest.get()
                 let (data, urlResponse) = try await Self.session.data(for: urlRequest)
