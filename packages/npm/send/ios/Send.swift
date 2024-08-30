@@ -47,7 +47,7 @@ extension Request {
                     urlRequest.httpBody = utf8Body
                 } else {
                     guard let base64Body = Data(base64Encoded: body) else {
-                        return .failure(SendError(code: .non_base64_request_body, message: ""))
+                        return .failure(SendError(code: .non_base64_request_body, message: "Your request headers specify a Content-Type NOT included in `utf8ContentTypes`, but your request body is not a base64-encoded string."))
                     }
                     urlRequest.httpBody = base64Body
                 }

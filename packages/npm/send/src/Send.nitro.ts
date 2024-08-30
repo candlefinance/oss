@@ -40,8 +40,8 @@ export interface SendError {
 }
 
 export interface SendResult {
-  response?: Response
-  error?: SendError
+  response: Response | undefined
+  error: SendError | undefined
 }
 
 export interface Send extends HybridObject<{ ios: 'swift' }> {
