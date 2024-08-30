@@ -1,42 +1,37 @@
 import Foundation
 import PINCache
+import NitroModules
 
-@objc(KitCacheManager)
-final class KitCacheManager: NSObject {
+final class Cache: HybridCacheSpec {
     
-    struct StringPayload: Codable {
-        let id: String
-        let value: String
-        
-        static var databaseTableName: String {
-            "string_payload"
+    var hybridContext = margelo.nitro.HybridContext()
+    
+    var memorySize: Int {
+        return getSizeOf(self)
+    }
+    
+    func clear() throws -> Promise<Void> {
+        return Promise.async {
+            PINCache.shared.removeAllObjects()
         }
     }
     
-    // MARK: - Cache
-    
-    @objc(write:withValue:withResolver:withRejecter:)
-    func write(id: String, value: String, resolve: RCTPromiseResolveBlock, reject: RCTPromiseRejectBlock) {
-        PINCache.shared.setObject(value, forKey: id)
-        resolve(true)
+    func read(key: String) throws -> Promise<String?> {
+        return Promise.async {
+            return PINCache.shared.object(forKey: key) as? String
+        }
     }
     
-    @objc(read:withResolver:withRejecter:)
-    func read(id: String, resolve: RCTPromiseResolveBlock, reject: RCTPromiseRejectBlock) {
-        let value = PINCache.shared.object(forKey: id)
-        resolve(value)
+    func write(key: String, value: String) throws -> Promise<Void> {
+        return Promise.async {
+            PINCache.shared.setObject(value, forKey: key)
+        }
     }
     
-    @objc(delete:withResolver:withRejecter:)
-    func delete(id: String, resolve: RCTPromiseResolveBlock, reject: RCTPromiseRejectBlock) {
-        PINCache.shared.removeObject(forKey: id)
-        resolve(true)
-    }
-    
-    @objc(clear:withRejecter:)
-    func clear(resolve: RCTPromiseResolveBlock, reject: RCTPromiseRejectBlock) {
-        PINCache.shared.removeAllObjects()
-        resolve(true)
+    func remove(key: String) throws -> Promise<Void> {
+        return Promise.async {
+            PINCache.shared.removeObject(forKey: key)
+        }
     }
     
 }

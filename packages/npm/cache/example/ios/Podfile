@@ -18,6 +18,7 @@ end
 
 target 'CacheExample' do
   config = use_native_modules!
+  pod 'PINCache', :modular_headers => true
 
   use_react_native!(
     :path => config[:reactNativePath],

@@ -1642,6 +1642,7 @@ __metadata:
     react: 18.3.1
     react-native: 0.75.2
     react-native-builder-bob: ^0.30.0
+    react-native-nitro-modules: ^0.5.0
   languageName: unknown
   linkType: soft
 
