@@ -93,14 +93,14 @@ export default function App() {
         title="Write"
         onPress={() => {
           console.log('write');
-          write('key', Date.now().toString());
+          storage.set('key', Date.now().toString());
         }}
       />
       <Button
         title="Read"
         onPress={() => {
           try {
-            const value = read('key');
+            const value = storage.getString('key');
             console.log('read', value);
             if (value !== undefined) {
               setCacheValue(value);
