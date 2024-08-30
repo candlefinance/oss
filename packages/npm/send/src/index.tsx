@@ -54,7 +54,7 @@ export async function send(request: SendRequest): Promise<SendResult> {
           return {
             result: 'error',
             code: Code.UNEXPECTED,
-            message: 'Unexpected error was thrown.',
+            message: 'Unexpected response from native runtime.',
           }
         }
       } catch (error) {

@@ -39,10 +39,12 @@ const App = () => {
         },
       },
     }).then((result) => {
-      if (result.error) {
-        console.log('ERROR', result.error)
+      if (result.result === 'error') {
+        console.log('ERROR', result)
       } else {
-        setData(JSON.parse(result.response?.body as any).results[0])
+        if (result.body !== undefined) {
+          setData(JSON.parse(result.body).results[0])
+        }
       }
     })
   }, [])
