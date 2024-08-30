@@ -10,27 +10,44 @@ final class Cache: HybridCacheSpec {
         return getSizeOf(self)
     }
     
-    func clear() throws -> Promise<Void> {
+    func clear() {
+        PINCache.shared.removeAllObjects()
+    }
+    
+    func clearAsync() throws -> Promise<Void> {
         return Promise.async {
-            PINCache.shared.removeAllObjects()
+            await PINCache.shared.removeAllObjectsAsync()
         }
     }
     
-    func read(key: String) throws -> Promise<String?> {
+    func read(key: String) -> String? {
+        return PINCache.shared.object(forKey: key) as? String
+    }
+    
+    func readAsync(key: String) throws -> Promise<String?> {
         return Promise.async {
-            return PINCache.shared.object(forKey: key) as? String
+            let (_, _, value) = await PINCache.shared.object(forKeyAsync: key)
+            return value as? String
         }
     }
     
-    func write(key: String, value: String) throws -> Promise<Void> {
+    func write(key: String, object: String) {
+        PINCache.shared.setObject(object, forKey: key)
+    }
+    
+    func writeAsync(key: String, object: String) throws -> Promise<Void> {
         return Promise.async {
-            PINCache.shared.setObject(value, forKey: key)
+            await PINCache.shared.setObjectAsync(object, forKey: key)
         }
     }
     
-    func remove(key: String) throws -> Promise<Void> {
+    func remove(key: String) {
+        PINCache.shared.removeObject(forKey: key)
+    }
+    
+    func removeAsync(key: String) throws -> Promise<Void> {
         return Promise.async {
-            PINCache.shared.removeObject(forKey: key)
+            await PINCache.shared.removeObject(forKeyAsync: key)
         }
     }
     

@@ -16,8 +16,8 @@
 
 
 
-#include <future>
 #include <string>
+#include <future>
 #include <optional>
 
 namespace margelo::nitro::cache {
@@ -48,10 +48,14 @@ namespace margelo::nitro::cache {
 
     public:
       // Methods
-      virtual std::future<void> write(const std::string& key, const std::string& value) = 0;
-      virtual std::future<std::optional<std::string>> read(const std::string& key) = 0;
-      virtual std::future<void> remove(const std::string& key) = 0;
-      virtual std::future<void> clear() = 0;
+      virtual void write(const std::string& key, const std::string& object) = 0;
+      virtual std::future<void> writeAsync(const std::string& key, const std::string& object) = 0;
+      virtual std::future<std::optional<std::string>> readAsync(const std::string& key) = 0;
+      virtual std::optional<std::string> read(const std::string& key) = 0;
+      virtual std::future<void> removeAsync(const std::string& key) = 0;
+      virtual void remove(const std::string& key) = 0;
+      virtual std::future<void> clearAsync() = 0;
+      virtual void clear() = 0;
 
     protected:
       // Hybrid Setup

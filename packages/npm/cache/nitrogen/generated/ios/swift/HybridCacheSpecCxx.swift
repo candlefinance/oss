@@ -64,9 +64,20 @@ public final class HybridCacheSpecCxx {
 
   // Methods
   @inline(__always)
-  public func write(key: std.string, value: std.string) -> bridge.PromiseHolder_void_ {
+  public func write(key: std.string, object: std.string) -> Void {
     do {
-      let result = try self.implementation.write(key: String(key), value: String(value))
+      try self.implementation.write(key: String(key), object: String(object))
+      return 
+    } catch {
+      let message = "\(error.localizedDescription)"
+      fatalError("Swift errors can currently not be propagated to C++! See https://github.com/swiftlang/swift/issues/75290 (Error: \(message))")
+    }
+  }
+  
+  @inline(__always)
+  public func writeAsync(key: std.string, object: std.string) -> bridge.PromiseHolder_void_ {
+    do {
+      let result = try self.implementation.writeAsync(key: String(key), object: String(object))
       return { () -> bridge.PromiseHolder_void_ in
         let promiseHolder = bridge.create_PromiseHolder_void_()
         result
@@ -81,14 +92,14 @@ public final class HybridCacheSpecCxx {
   }
   
   @inline(__always)
-  public func read(key: std.string) -> bridge.PromiseHolder_std__optional_std__string__ {
+  public func readAsync(key: std.string) -> bridge.PromiseHolder_std__optional_std__string__ {
     do {
-      let result = try self.implementation.read(key: String(key))
+      let result = try self.implementation.readAsync(key: String(key))
       return { () -> bridge.PromiseHolder_std__optional_std__string__ in
         let promiseHolder = bridge.create_PromiseHolder_std__optional_std__string__()
         result
-          .then({ value in promiseHolder.resolve({ () -> bridge.std__optional_std__string_ in
-        if let actualValue = value {
+          .then({ v in promiseHolder.resolve({ () -> bridge.std__optional_std__string_ in
+        if let actualValue = v {
           return bridge.create_std__optional_std__string_(std.string(actualValue))
         } else {
           return .init()
@@ -104,9 +115,26 @@ public final class HybridCacheSpecCxx {
   }
   
   @inline(__always)
-  public func remove(key: std.string) -> bridge.PromiseHolder_void_ {
+  public func read(key: std.string) -> bridge.std__optional_std__string_ {
     do {
-      let result = try self.implementation.remove(key: String(key))
+      let result = try self.implementation.read(key: String(key))
+      return { () -> bridge.std__optional_std__string_ in
+        if let actualValue = result {
+          return bridge.create_std__optional_std__string_(std.string(actualValue))
+        } else {
+          return .init()
+        }
+      }()
+    } catch {
+      let message = "\(error.localizedDescription)"
+      fatalError("Swift errors can currently not be propagated to C++! See https://github.com/swiftlang/swift/issues/75290 (Error: \(message))")
+    }
+  }
+  
+  @inline(__always)
+  public func removeAsync(key: std.string) -> bridge.PromiseHolder_void_ {
+    do {
+      let result = try self.implementation.removeAsync(key: String(key))
       return { () -> bridge.PromiseHolder_void_ in
         let promiseHolder = bridge.create_PromiseHolder_void_()
         result
@@ -121,9 +149,20 @@ public final class HybridCacheSpecCxx {
   }
   
   @inline(__always)
-  public func clear() -> bridge.PromiseHolder_void_ {
+  public func remove(key: std.string) -> Void {
     do {
-      let result = try self.implementation.clear()
+      try self.implementation.remove(key: String(key))
+      return 
+    } catch {
+      let message = "\(error.localizedDescription)"
+      fatalError("Swift errors can currently not be propagated to C++! See https://github.com/swiftlang/swift/issues/75290 (Error: \(message))")
+    }
+  }
+  
+  @inline(__always)
+  public func clearAsync() -> bridge.PromiseHolder_void_ {
+    do {
+      let result = try self.implementation.clearAsync()
       return { () -> bridge.PromiseHolder_void_ in
         let promiseHolder = bridge.create_PromiseHolder_void_()
         result
@@ -131,6 +170,17 @@ public final class HybridCacheSpecCxx {
           .catch({ promiseHolder.reject(std.string(String(describing: $0))) })
         return promiseHolder
       }()
+    } catch {
+      let message = "\(error.localizedDescription)"
+      fatalError("Swift errors can currently not be propagated to C++! See https://github.com/swiftlang/swift/issues/75290 (Error: \(message))")
+    }
+  }
+  
+  @inline(__always)
+  public func clear() -> Void {
+    do {
+      try self.implementation.clear()
+      return 
     } catch {
       let message = "\(error.localizedDescription)"
       fatalError("Swift errors can currently not be propagated to C++! See https://github.com/swiftlang/swift/issues/75290 (Error: \(message))")

@@ -33,10 +33,14 @@ public protocol HybridCacheSpec: HybridObjectSpec {
   
 
   // Methods
-  func write(key: String, value: String) throws -> Promise<Void>
-  func read(key: String) throws -> Promise<String?>
-  func remove(key: String) throws -> Promise<Void>
-  func clear() throws -> Promise<Void>
+  func write(key: String, object: String) throws -> Void
+  func writeAsync(key: String, object: String) throws -> Promise<Void>
+  func readAsync(key: String) throws -> Promise<String?>
+  func read(key: String) throws -> String?
+  func removeAsync(key: String) throws -> Promise<Void>
+  func remove(key: String) throws -> Void
+  func clearAsync() throws -> Promise<Void>
+  func clear() throws -> Void
 }
 
 public extension HybridCacheSpec {

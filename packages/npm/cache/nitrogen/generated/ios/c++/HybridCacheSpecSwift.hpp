@@ -15,9 +15,9 @@ namespace candlefinance_cache { class HybridCacheSpecCxx; }
 
 
 
+#include <string>
 #include <future>
 #include <NitroModules/PromiseHolder.hpp>
-#include <string>
 #include <optional>
 
 #if __has_include(<NitroModules/HybridContext.hpp>)
@@ -61,21 +61,34 @@ namespace margelo::nitro::cache {
 
   public:
     // Methods
-    inline std::future<void> write(const std::string& key, const std::string& value) override {
-      auto newValue = _swiftPart.write(key, value);
-      return newValue.getFuture();
+    inline void write(const std::string& key, const std::string& object) override {
+      _swiftPart.write(key, object);
     }
-    inline std::future<std::optional<std::string>> read(const std::string& key) override {
+    inline std::future<void> writeAsync(const std::string& key, const std::string& object) override {
+      auto value = _swiftPart.writeAsync(key, object);
+      return value.getFuture();
+    }
+    inline std::future<std::optional<std::string>> readAsync(const std::string& key) override {
+      auto value = _swiftPart.readAsync(key);
+      return value.getFuture();
+    }
+    inline std::optional<std::string> read(const std::string& key) override {
       auto value = _swiftPart.read(key);
+      return value;
+    }
+    inline std::future<void> removeAsync(const std::string& key) override {
+      auto value = _swiftPart.removeAsync(key);
       return value.getFuture();
     }
-    inline std::future<void> remove(const std::string& key) override {
-      auto value = _swiftPart.remove(key);
+    inline void remove(const std::string& key) override {
+      _swiftPart.remove(key);
+    }
+    inline std::future<void> clearAsync() override {
+      auto value = _swiftPart.clearAsync();
       return value.getFuture();
     }
-    inline std::future<void> clear() override {
-      auto value = _swiftPart.clear();
-      return value.getFuture();
+    inline void clear() override {
+      _swiftPart.clear();
     }
 
   private:

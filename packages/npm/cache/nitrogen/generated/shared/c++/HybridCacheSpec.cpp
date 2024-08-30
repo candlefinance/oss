@@ -16,8 +16,12 @@ namespace margelo::nitro::cache {
     // load custom methods/properties
     registerHybrids(this, [](Prototype& prototype) {
       prototype.registerHybridMethod("write", &HybridCacheSpec::write);
+      prototype.registerHybridMethod("writeAsync", &HybridCacheSpec::writeAsync);
+      prototype.registerHybridMethod("readAsync", &HybridCacheSpec::readAsync);
       prototype.registerHybridMethod("read", &HybridCacheSpec::read);
+      prototype.registerHybridMethod("removeAsync", &HybridCacheSpec::removeAsync);
       prototype.registerHybridMethod("remove", &HybridCacheSpec::remove);
+      prototype.registerHybridMethod("clearAsync", &HybridCacheSpec::clearAsync);
       prototype.registerHybridMethod("clear", &HybridCacheSpec::clear);
     });
   }

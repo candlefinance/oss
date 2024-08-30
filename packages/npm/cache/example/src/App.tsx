@@ -1,43 +1,60 @@
 import * as React from 'react';
 
-import { clear, read, remove, write } from '@candlefinance/cache';
 import {
-  Platform,
-  StyleSheet,
-  Text,
-  TouchableOpacity,
-  View,
-} from 'react-native';
+  clear,
+  read,
+  readAsync,
+  remove,
+  removeAsync,
+  write,
+  writeAsync,
+} from '@candlefinance/cache';
+import { StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 
-const benchmark = async () => {
+const benchmark = () => {
   const start = Date.now();
   for (let i = 0; i < 10000; i++) {
-    await write(`key${i}`, `value${i}`);
+    write(`key${i}`, `value${i}`);
   }
   const end = Date.now();
   console.log('write', end - start);
 
   const start2 = Date.now();
   for (let i = 0; i < 10000; i++) {
-    await read(`key${i}`);
+    read(`key${i}`);
   }
   const end2 = Date.now();
   console.log('read', end2 - start2);
 
   const start3 = Date.now();
   for (let i = 0; i < 10000; i++) {
-    await remove(`key${i}`);
+    remove(`key${i}`);
   }
   const end3 = Date.now();
   console.log('remove', end3 - start3);
+};
 
-  console.log(
-    `Summary: It took ${end - start}ms to write 10000 items, ${
-      end2 - start2
-    }ms to read 10000 items, and ${
-      end3 - start3
-    }ms to remove 10000 items on Platform ${Platform.OS}`
-  );
+const benchmarkAsync = async () => {
+  const start = Date.now();
+  for (let i = 0; i < 10000; i++) {
+    await writeAsync(`key${i}`, `value${i}`);
+  }
+  const end = Date.now();
+  console.log('write', end - start);
+
+  const start2 = Date.now();
+  for (let i = 0; i < 10000; i++) {
+    await readAsync(`key${i}`);
+  }
+  const end2 = Date.now();
+  console.log('read', end2 - start2);
+
+  const start3 = Date.now();
+  for (let i = 0; i < 10000; i++) {
+    await removeAsync(`key${i}`);
+  }
+  const end3 = Date.now();
+  console.log('remove', end3 - start3);
 };
 
 export default function App() {
@@ -49,18 +66,18 @@ export default function App() {
       <Text>{cacheValue}</Text>
       <View style={{ height: 30 }} />
       <TouchableOpacity
-        onPress={async () => {
+        onPress={() => {
           console.log('write');
-          await write('key', 'Hello World');
+          write('key', 'Hello World');
         }}
       >
         <Text>Write</Text>
       </TouchableOpacity>
       <View style={{ height: 30 }} />
       <TouchableOpacity
-        onPress={async () => {
+        onPress={() => {
           try {
-            const value = await read('key');
+            const value = read('key');
             console.log('read', value);
             if (value !== undefined) {
               setCacheValue(value);
@@ -76,8 +93,8 @@ export default function App() {
       </TouchableOpacity>
       <View style={{ height: 30 }} />
       <TouchableOpacity
-        onPress={async () => {
-          await remove('key');
+        onPress={() => {
+          remove('key');
           console.log('remove');
         }}
       >
@@ -86,7 +103,7 @@ export default function App() {
       <View style={{ height: 30 }} />
       <TouchableOpacity
         onPress={async () => {
-          await clear();
+          clear();
           console.log('clear');
         }}
       >
@@ -94,12 +111,21 @@ export default function App() {
       </TouchableOpacity>
       <View style={{ height: 30 }} />
       <TouchableOpacity
-        onPress={async () => {
-          console.log('benchmark');
-          await benchmark();
+        onPress={() => {
+          console.log('benchmark sync read/write/delete 10000 times');
+          benchmark();
         }}
       >
-        <Text>benchmark</Text>
+        <Text>benchmark sync</Text>
+      </TouchableOpacity>
+      <View style={{ height: 30 }} />
+      <TouchableOpacity
+        onPress={() => {
+          console.log('benchmark async read/write/delete 10000 times');
+          benchmarkAsync();
+        }}
+      >
+        <Text>benchmark async </Text>
       </TouchableOpacity>
     </View>
   );
