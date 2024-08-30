@@ -9,7 +9,7 @@ import {
   write,
   writeAsync,
 } from '@candlefinance/cache';
-import { StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { Button, StyleSheet, Text, View } from 'react-native';
 
 const benchmark = () => {
   const start = Date.now();
@@ -62,19 +62,16 @@ export default function App() {
 
   return (
     <View style={styles.container}>
-      <View style={{ height: 30 }} />
       <Text>{cacheValue}</Text>
-      <View style={{ height: 30 }} />
-      <TouchableOpacity
+      <Button
+        title="Write"
         onPress={() => {
           console.log('write');
-          write('key', 'Hello World');
+          write('key', Date.now().toString());
         }}
-      >
-        <Text>Write</Text>
-      </TouchableOpacity>
-      <View style={{ height: 30 }} />
-      <TouchableOpacity
+      />
+      <Button
+        title="Read"
         onPress={() => {
           try {
             const value = read('key');
@@ -88,45 +85,35 @@ export default function App() {
             setCacheValue('empty');
           }
         }}
-      >
-        <Text>Read</Text>
-      </TouchableOpacity>
-      <View style={{ height: 30 }} />
-      <TouchableOpacity
+      />
+      <Button
+        title="Remove"
         onPress={() => {
           remove('key');
           console.log('remove');
         }}
-      >
-        <Text>Remove</Text>
-      </TouchableOpacity>
-      <View style={{ height: 30 }} />
-      <TouchableOpacity
+      />
+      <Button
+        title="Clear"
         onPress={async () => {
-          clear();
+          await clear();
           console.log('clear');
         }}
-      >
-        <Text>clear</Text>
-      </TouchableOpacity>
-      <View style={{ height: 30 }} />
-      <TouchableOpacity
+      />
+      <Button
+        title="Benchmark Sync"
         onPress={() => {
           console.log('benchmark sync read/write/delete 10000 times');
           benchmark();
         }}
-      >
-        <Text>benchmark sync</Text>
-      </TouchableOpacity>
-      <View style={{ height: 30 }} />
-      <TouchableOpacity
+      />
+      <Button
+        title="Benchmark Async"
         onPress={() => {
           console.log('benchmark async read/write/delete 10000 times');
           benchmarkAsync();
         }}
-      >
-        <Text>benchmark async </Text>
-      </TouchableOpacity>
+      />
     </View>
   );
 }
@@ -134,12 +121,7 @@ export default function App() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    alignItems: 'center',
     justifyContent: 'center',
-  },
-  box: {
-    width: 60,
-    height: 60,
-    marginVertical: 20,
+    alignItems: 'center',
   },
 });
