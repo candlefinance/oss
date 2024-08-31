@@ -1,0 +1,10 @@
+{
+  "cxxNamespace": ["financekit"],
+  "ios": {
+    "iosModulename": "candlefinance_financekit"
+  },
+  "android": {
+    "androidNamespace": ["candlefinance_financekit"],
+    "androidCxxLibName": "financekit"
+  }
+}
