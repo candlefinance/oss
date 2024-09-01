@@ -1,0 +1,10 @@
+{
+  "cxxNamespace": ["callback"],
+  "ios": {
+    "iosModulename": "candlefinance_callback"
+  },
+  "android": {
+    "androidNamespace": ["candlefinance_callback"],
+    "androidCxxLibName": "callback"
+  }
+}
