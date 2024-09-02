@@ -1748,7 +1748,7 @@ EXTERNAL SOURCES:
 
 SPEC CHECKSUMS:
   boost: 4cb898d0bf20404aab1850c656dcea009429d6c1
-  candlefinance-callback: 858b5c225f8cc0d43a849d6ed003bcbb9f9cc0b0
+  candlefinance-callback: 86fc6db7ff797f060e45bb6531a3e7932527fb1d
   DoubleConversion: 76ab83afb40bddeeee456813d9c04f67f78771b5
   FBLazyVector: 38bb611218305c3bc61803e287b8a81c6f63b619
   fmt: 4c2741a687cc09f0634a2e2c72a838b99f1ff120
