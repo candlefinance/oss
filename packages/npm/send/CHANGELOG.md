@@ -1,3 +1,62 @@
+
+
+# [0.4.0](https://github.com/candlefinance/oss/compare/v0.3.22...v0.4.0) (2024-09-02)
+
+
+### Bug Fixes
+
+* add more complex types ([ccdd0a9](https://github.com/candlefinance/oss/commit/ccdd0a96947746289e90eafb2e6548071d273182))
+* **all:** cleanup android code ([03a0c3d](https://github.com/candlefinance/oss/commit/03a0c3d8894fe67bcecee92365069385d1fb0f02))
+* **all:** cleanup pr comments ([6cf8ba5](https://github.com/candlefinance/oss/commit/6cf8ba5d461d2c9540826692771f1afc1301e11e))
+* bump send version ([4f6b82c](https://github.com/candlefinance/oss/commit/4f6b82c15d8a85852bb0108e8b7d8c1e50555317))
+* compiler error on android ([c22010a](https://github.com/candlefinance/oss/commit/c22010aa4bebbdf29d295a69da1b7f15044e0770))
+* get android to compile ([de4bbce](https://github.com/candlefinance/oss/commit/de4bbce3596c97246d61e22a91d85902c4e4e14b))
+* lint ([bb942a8](https://github.com/candlefinance/oss/commit/bb942a8562e13753679bb16e8a07237ef8c144b4))
+* lock ([9d90e8e](https://github.com/candlefinance/oss/commit/9d90e8ebbd764c13fe91f7aff621591bf631d4c1))
+* make android compile ([021670f](https://github.com/candlefinance/oss/commit/021670febdf72b205e026a6fb9db5b9c438a985e))
+* make things compile ([88f64b9](https://github.com/candlefinance/oss/commit/88f64b91ce14fe8c14d5438523aaff44ddbd323f))
+* more changes ([dc809b8](https://github.com/candlefinance/oss/commit/dc809b8d1df351f53b6d6a4e323222ec5a2dbf7a))
+* more polish ([b1252ed](https://github.com/candlefinance/oss/commit/b1252edaaead926958d7dc231fe6c2102a5fa8ef))
+* **packages:** add important note to readme ([33201b1](https://github.com/candlefinance/oss/commit/33201b1adee0a047f3a07d04a7235194333c9ef3))
+* pass through errors ([4c4bf10](https://github.com/candlefinance/oss/commit/4c4bf102ac17fe8c595f70716c2a6fcbeb903cc9))
+* pr feedback ([6e67a1c](https://github.com/candlefinance/oss/commit/6e67a1c819df86c7e95d7ad01ae7e929bb762de0))
+* **prefs:** add ios impl ([dbc3322](https://github.com/candlefinance/oss/commit/dbc332223d2253260bf9f858fbec764fe0bdfcaa))
+* **prefs:** add readme and make example app consistent ([27c3e52](https://github.com/candlefinance/oss/commit/27c3e5279a69e8bfb6a056332448a1bd8966b721))
+* **prefs:** add try/catches and error handling ([04ecb0b](https://github.com/candlefinance/oss/commit/04ecb0ba37b48c65cb561fc9fe7f8c8e52ca45a2))
+* **prefs:** clean up method names and signatures ([8c368e1](https://github.com/candlefinance/oss/commit/8c368e1e4e82c81aec79ea5bb32d0760d87d3880))
+* **prefs:** expose non-effect interface ([d0788f3](https://github.com/candlefinance/oss/commit/d0788f3b331c181c4f4b68569ebfa2f40fda6340))
+* **prefs:** fix readme ([2fa3464](https://github.com/candlefinance/oss/commit/2fa34642604983e37d5e617b39a626d7dde7d44f))
+* **prefs:** fix readme ([2f0c773](https://github.com/candlefinance/oss/commit/2f0c7737b947aeb44f3642f8576d02ac068d377d))
+* **prefs:** fix readme example code ([a500370](https://github.com/candlefinance/oss/commit/a5003708a94fc9cb2aa7b493944897dfd0e30797))
+* **prefs:** fix throws ([e463c52](https://github.com/candlefinance/oss/commit/e463c5238b798a6b5fbdaa2f988544905c02bec0))
+* **prefs:** improve readme formatting ([c1e213a](https://github.com/candlefinance/oss/commit/c1e213a7e3583366b0901c7b1cfb584067d2b161))
+* **prefs:** use better file name ([1b4e21c](https://github.com/candlefinance/oss/commit/1b4e21ceb83fda9db72d6bc7351eb5417847653e))
+* readme ([f9ebb92](https://github.com/candlefinance/oss/commit/f9ebb92b0af98af48e93bc9d6905f6dbfc2dcb09))
+* revert ([c7486f1](https://github.com/candlefinance/oss/commit/c7486f183432f821e505e25ed7217c88c93e48d1))
+* revert android changes ([0ed31d2](https://github.com/candlefinance/oss/commit/0ed31d2ef4ac6bb2882258aab65a23cc1e30ef3b))
+* revert yarn ([2dcb5b4](https://github.com/candlefinance/oss/commit/2dcb5b47a7cc4d0883c74a674fdf5556e46125c1))
+* udpates ([0249043](https://github.com/candlefinance/oss/commit/02490430d88929b029484e9dd8f5b3bc3a2e7cb3))
+* update ([af6a8f2](https://github.com/candlefinance/oss/commit/af6a8f2e523833957714c2895ecc8b5fb6aa4e51))
+* update ([1f7340a](https://github.com/candlefinance/oss/commit/1f7340aa4cff569213d519ab1efefe5470279653))
+* update readme ([0b7adbc](https://github.com/candlefinance/oss/commit/0b7adbc5963d38d18b8346fe21a3bab14a600a34))
+* updates ([c96843b](https://github.com/candlefinance/oss/commit/c96843b2f0d44608c88ba2263ecf5a61fcced0ae))
+* updates ([bb1b28d](https://github.com/candlefinance/oss/commit/bb1b28d6bd7086e22b37165c1a617bfc3fe8c3e2))
+* updates ([1e5f468](https://github.com/candlefinance/oss/commit/1e5f4683b94729e6a383dbbaa79a48f65a526473))
+* updates ([d413696](https://github.com/candlefinance/oss/commit/d413696ad05f9ced9e039d6a031fe1843adfd488))
+* updates ([21a9781](https://github.com/candlefinance/oss/commit/21a9781c135b5c249d575a56f07ac3f194fb0339))
+* updates ([4f3956a](https://github.com/candlefinance/oss/commit/4f3956a379ca99bcee6dbfb07fcfa4640f049e33))
+* updates and refactor ([4bb81ff](https://github.com/candlefinance/oss/commit/4bb81fff7ead5884a7435a0ce16410e937dfd1a7))
+* updates to (wip) ([a4714d6](https://github.com/candlefinance/oss/commit/a4714d6f3e248bc6bf913fd58dd7ae2dbb2ae0f3))
+* wip ([8019844](https://github.com/candlefinance/oss/commit/8019844918d9cb6450860bed389feade36c63295))
+* wrap the headers and query ([4b7019e](https://github.com/candlefinance/oss/commit/4b7019e02be441df32458c6d286de3fba2fb522f))
+
+
+### Features
+
+* add android impl for new prefs library ([61832bb](https://github.com/candlefinance/oss/commit/61832bb76edff84c52966405a82906b50f3841ab))
+* make ios compile ([e561816](https://github.com/candlefinance/oss/commit/e56181654c842ea6bc1f4508a3f22583fb291cca))
+* make ios compile ([be7228f](https://github.com/candlefinance/oss/commit/be7228f9efe287aca95c0818a65d87d95de2ffd9))
+
 ## 0.3.14 (2024-06-05)
 
 ## 0.3.13 (2024-06-04)
