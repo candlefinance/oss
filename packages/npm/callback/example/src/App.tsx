@@ -1,9 +1,16 @@
-import { StyleSheet, View, Text } from 'react-native';
-import { multiply } from '@candlefinance/callback';
-
-const result = multiply(3, 7);
+import { onEvent } from '@candlefinance/callback';
+import { useEffect, useState } from 'react';
+import { StyleSheet, Text, View } from 'react-native';
 
 export default function App() {
+  const [result, setResult] = useState('Loading');
+  useEffect(() => {
+    onEvent((result) => {
+      console.log('data', result);
+      setResult(result.data.message);
+    });
+  }, []);
+
   return (
     <View style={styles.container}>
       <Text>Result: {result}</Text>
