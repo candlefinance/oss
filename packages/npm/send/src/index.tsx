@@ -1,18 +1,19 @@
 import { Platform } from 'react-native'
 import { NitroModules } from 'react-native-nitro-modules'
-import {
-  Code,
-  type Request as _Request,
-  type Response as _Response,
-  type SendError as _SendError,
-  type Send,
+import type { Send, SendError, SendRequest, SendResponse } from './Send.nitro'
+import { SendErrorCode } from './Send.nitro'
+
+export { SendErrorCode } from './Send.nitro'
+export type {
+  SendError,
+  SendMethod,
+  SendParameters,
+  SendRequest,
+  SendResponse,
 } from './Send.nitro'
 
-export type SendRequest = _Request
-export type SendResponse = _Response
-export type SendError = _SendError
 export type SendResult =
-  | (_Response & { result: 'success' })
+  | (SendResponse & { result: 'success' })
   | (SendError & { result: 'error' })
 
 const Send = NitroModules.createHybridObject<Send>('Send')
@@ -42,14 +43,14 @@ export async function send(request: SendRequest): Promise<SendResult> {
         } else {
           return {
             result: 'error',
-            code: Code.UNEXPECTED,
+            code: SendErrorCode.UNEXPECTED,
             message: 'Unexpected response from native runtime.',
           }
         }
       } catch (error) {
         return {
           result: 'error',
-          code: Code.NO_RESPONSE,
+          code: SendErrorCode.NO_RESPONSE,
           message:
             error instanceof Error
               ? error.message
@@ -61,7 +62,7 @@ export async function send(request: SendRequest): Promise<SendResult> {
     case 'windows':
       return {
         result: 'error',
-        code: Code.NO_RESPONSE,
+        code: SendErrorCode.NO_RESPONSE,
         message: 'Platform is not supported',
       }
   }

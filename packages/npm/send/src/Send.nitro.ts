@@ -1,10 +1,10 @@
 import { type HybridObject } from 'react-native-nitro-modules'
 
-export interface Parameters {
+export interface SendParameters {
   parameters: Record<string, string>
 }
 
-export type Method =
+export type SendMethod =
   | 'GET'
   | 'POST'
   | 'PUT'
@@ -15,23 +15,23 @@ export type Method =
   | 'CONNECT'
   | 'TRACE'
 
-export interface Request {
+export interface SendRequest {
   baseURL: string
   path: string
-  query: Parameters
-  header: Parameters
-  method: Method
+  query: SendParameters
+  header: SendParameters
+  method: SendMethod
   body?: string
   utf8ContentTypes: string[]
 }
 
-export interface Response {
+export interface SendResponse {
   statusCode: number
-  header: Parameters
+  header: SendParameters
   body: string | undefined
 }
 
-export enum Code {
+export enum SendErrorCode {
   RESPONSE_INVALID,
   REQUEST_INVALID,
   NETWORK_ERROR,
@@ -46,16 +46,16 @@ export enum Code {
 }
 
 export interface SendError {
-  code: Code
+  code: SendErrorCode
   message: string
 }
 
 export interface SendResult {
-  response: Response | undefined
+  response: SendResponse | undefined
   error: SendError | undefined
 }
 
 export interface Send
   extends HybridObject<{ ios: 'swift'; android: 'kotlin' }> {
-  send(request: Request): Promise<SendResult>
+  send(request: SendRequest): Promise<SendResult>
 }

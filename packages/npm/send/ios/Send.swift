@@ -10,7 +10,7 @@ private func bodyIsUTF8(contentTypeHeader: String?, utf8ContentTypes: [String]) 
 
 extension SendError: Error {}
 
-extension Request {
+extension SendRequest {
     var url: Result<URL, SendError> {
         guard var urlComponents = URLComponents(string: baseURL) else {
             return .failure(SendError(code: .invalidRequestBaseUrl, message: "Your base URL is not valid."))
@@ -57,13 +57,13 @@ extension Request {
     }
 }
 
-extension Response {
-    init(request: Request, data: Data, httpURLResponse: HTTPURLResponse) throws {
+extension SendResponse {
+    init(request: SendRequest, data: Data, httpURLResponse: HTTPURLResponse) throws {
         guard let headerParameters = httpURLResponse.allHeaderFields as? [String: String] else {
             throw SendError(code: .invalidResponseHeaderParameters, message: "The response headers were not valid.")
         }
         let statusCode = Double(httpURLResponse.statusCode)
-        let header = Parameters(parameters: headerParameters)
+        let header = SendParameters(parameters: headerParameters)
         if (data.isEmpty) {
             self.init(statusCode: statusCode, header: header, body: nil)
         } else {
@@ -107,7 +107,7 @@ final class Send: HybridSendSpec {
         delegateQueue: nil
     )
     
-    func send(request: Request) throws -> Promise<SendResult> {
+    func send(request: SendRequest) throws -> Promise<SendResult> {
         return Promise.async { [weak self] in
             guard let self else {
                 return .init(response: nil, error: nil)
@@ -119,7 +119,7 @@ final class Send: HybridSendSpec {
                     let sendError = SendError(code: .responseInvalid, message: "Your request received a response, but it couldn't be processed. Please verify the configuration of your server.")
                     return SendResult(response: nil, error: sendError)
                 }
-                let response = try Response(
+                let response = try SendResponse(
                     request: request,
                     data: data,
                     httpURLResponse: httpURLResponse
