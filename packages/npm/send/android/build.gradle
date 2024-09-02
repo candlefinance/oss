@@ -1,7 +1,4 @@
 buildscript {
-  // Buildscript is evaluated before everything else so we can't use getExtOrDefault
-  def kotlin_version = rootProject.ext.has("kotlinVersion") ? rootProject.ext.get("kotlinVersion") : project.properties["Send_kotlinVersion"]
-
   repositories {
     google()
     mavenCentral()
@@ -9,8 +6,6 @@ buildscript {
 
   dependencies {
     classpath "com.android.tools.build:gradle:7.2.1"
-    // noinspection DifferentKotlinGradleVersion
-    classpath "org.jetbrains.kotlin:kotlin-gradle-plugin:$kotlin_version"
   }
 }
 
@@ -24,7 +19,7 @@ def isNewArchitectureEnabled() {
 }
 
 apply plugin: "com.android.library"
-apply plugin: "kotlin-android"
+apply plugin: 'org.jetbrains.kotlin.android'
 apply from: '../nitrogen/generated/android/send+autolinking.gradle'
 
 if (isNewArchitectureEnabled()) {
@@ -49,15 +44,7 @@ def supportsNamespace() {
 }
 
 android {
-  if (supportsNamespace()) {
-    namespace "com.candlefinance.send"
-
-    sourceSets {
-      main {
-        manifest.srcFile "src/main/AndroidManifestNew.xml"
-      }
-    }
-  }
+  namespace "com.candlefinance.send"
 
   ndkVersion getExtOrDefault("ndkVersion")
   compileSdkVersion getExtOrIntegerDefault("compileSdkVersion")
@@ -70,6 +57,7 @@ android {
     externalNativeBuild {
       cmake {
         cppFlags "-O2 -frtti -fexceptions -Wall -fstack-protector-all"
+        arguments "-DANDROID_STL=c++_shared"
         abiFilters (*reactNativeArchitectures())
       }
     }
@@ -83,6 +71,7 @@ android {
 
   buildFeatures {
     buildConfig true
+    prefab true
   }
 
   buildTypes {
@@ -103,10 +92,10 @@ android {
   sourceSets {
     main {
       if (isNewArchitectureEnabled()) {
-          java.srcDirs += [
-            "generated/java",
-            "generated/jni"
-          ]
+        java.srcDirs += [
+          // React Codegen files
+          "${project.buildDir}/generated/source/codegen/java"
+        ]
       }
     }
   }
@@ -117,14 +106,14 @@ repositories {
   google()
 }
 
-def kotlin_version = getExtOrDefault("kotlinVersion")
 
 dependencies {
   // For < 0.71, this will be from the local maven repo
   // For > 0.71, this will be replaced by `com.facebook.react:react-android:$version` by react gradle plugin
   //noinspection GradleDynamicVersion
   implementation "com.facebook.react:react-native:+"
-  implementation "org.jetbrains.kotlin:kotlin-stdlib:$kotlin_version"
+
+  // Add a dependency on NitroModules
   implementation project(":react-native-nitro-modules")
 }
 
