@@ -1,50 +1,69 @@
-import { NativeModules, Platform } from 'react-native'
+import { Platform } from 'react-native'
+import { NitroModules } from 'react-native-nitro-modules'
+import type { Send, SendError, SendRequest, SendResponse } from './Send.nitro'
+import { SendErrorCode } from './Send.nitro'
 
-const LINKING_ERROR =
-  `The package '@candlefinance/send' doesn't seem to be linked. Make sure: \n\n` +
-  Platform.select({ ios: "- You have run 'pod install'\n", default: '' }) +
-  '- You rebuilt the app after installing the package\n' +
-  '- You are not using Expo Go\n'
+export { SendErrorCode } from './Send.nitro'
+export type {
+  SendError,
+  SendMethod,
+  SendParameters,
+  SendRequest,
+  SendResponse,
+} from './Send.nitro'
 
-const Send = NativeModules.Send
-  ? NativeModules.Send
-  : new Proxy(
-      {},
-      {
-        get() {
-          throw new Error(LINKING_ERROR)
-        },
+export type SendResult =
+  | (SendResponse & { result: 'success' })
+  | (SendError & { result: 'error' })
+
+const Send = NitroModules.createHybridObject<Send>('Send')
+
+export async function send(request: SendRequest): Promise<SendResult> {
+  switch (Platform.OS) {
+    case 'ios':
+    case 'macos':
+      try {
+        const result = await Send.send(request)
+        if (result.error !== undefined && result.response === undefined) {
+          return {
+            result: 'error',
+            code: result.error.code,
+            message: result.error.message,
+          }
+        } else if (
+          result.response !== undefined &&
+          result.error === undefined
+        ) {
+          return {
+            result: 'success',
+            body: result.response.body,
+            header: result.response.header,
+            statusCode: result.response.statusCode,
+          }
+        } else {
+          return {
+            result: 'error',
+            code: SendErrorCode.UNEXPECTED,
+            message: 'Unexpected response from native runtime.',
+          }
+        }
+      } catch (error) {
+        return {
+          result: 'error',
+          code: SendErrorCode.NO_RESPONSE,
+          message:
+            error instanceof Error
+              ? error.message
+              : 'Unexpected error was thrown.',
+        }
       }
-    )
-
-export type Request = {
-  baseURL: string
-  path: string
-  queryParameters: Record<string, string>
-  headerParameters: Record<string, string>
-  method:
-    | 'GET'
-    | 'POST'
-    | 'PUT'
-    | 'DELETE'
-    | 'PATCH'
-    | 'HEAD'
-    | 'OPTIONS'
-    | 'CONNECT'
-    | 'TRACE'
-  body: string | null
-  utf8ContentTypes: string[]
-}
-
-export type Response = {
-  statusCode: number
-  headerParameters: Record<string, string>
-  body: string | null
-}
-
-export async function send(request: Request): Promise<Response> {
-  // NOTE: The React Native bridge stringifies all objects anyway; we just do it manually so we can take advantage of Swift.Codable and kotlinx.serialization to simplify the native code
-  const stringifiedRequest = JSON.stringify(request)
-  const stringifiedResponse = await Send.send(stringifiedRequest)
-  return JSON.parse(stringifiedResponse)
+    case 'android':
+    case 'web':
+    case 'windows':
+      return {
+        result: 'error',
+        code: SendErrorCode.NO_RESPONSE,
+        message: 'Platform is not supported',
+      }
+  }
 }

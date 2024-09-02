@@ -1,0 +1,10 @@
+{
+  "cxxNamespace": ["send"],
+  "ios": {
+    "iosModulename": "candlefinance_send"
+  },
+  "android": {
+    "androidNamespace": ["candlefinance_send"],
+    "androidCxxLibName": "send"
+  }
+}
