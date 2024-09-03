@@ -1,4 +1,4 @@
-package com.financekitexample
+package candlefinance.financekit.example
 
 import com.facebook.react.ReactActivity
 import com.facebook.react.ReactActivityDelegate
